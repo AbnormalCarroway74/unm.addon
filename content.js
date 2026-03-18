@@ -16,20 +16,22 @@ const DEFAULTS = {
   userCards:           true,
   autoAdventRedeemer:  true,
   adBlocker:           true,
-  autoAcceptDelay:     500,
-  userCardDelay:       400,
-  accentColor:         '#00c853',
-  hideFooter:          false,
-  compactMode:         false,
-  vetoMaps:            '',
-  showKD:              true,
-  showMMR:             true,
-  showWinPct:          true,
-  discordInvite:       '',
-  adminColor:          '#ff4444',
-  modColor:            '#ffaa00',
-  vipColor:            '#aa44ff',
-  customStatusText:    '',
+  autoAcceptDelay:          500,
+  userCardDelay:            400,
+  accentColor:              '#00c853',
+  hideFooter:               false,
+  compactMode:              false,
+  vetoMaps:                 '',
+  showKD:                   true,
+  showMMR:                  true,
+  showWinPct:               true,
+  discordDesktopRedirect:   true,
+  adminColor:               '#ff4444',
+  modColor:                 '#ffaa00',
+  vipColor:                 '#aa44ff',
+  verifiedName:             '',
+  profileRole:              'NONE',
+  profileBorder:            'NONE',
 };
 
 let settings = { ...DEFAULTS };
@@ -170,8 +172,26 @@ function buildOverlayMenu() {
           <span class="unm-title">Profile Modifiers</span>\
         </div>\
         <div class="unm-list unm-settings">\
-          <label>Custom Status Text</label>\
-          <input type="text" class="unm-input" id="unm-customStatus" placeholder="e.g. Always Ready" maxlength="50" value="' + escapeHtml(settings.customStatusText || '') + '" />\
+          <label>Verified Name</label>\
+          <input type="text" class="unm-input" id="unm-verifiedName" placeholder="" value="' + escapeHtml(settings.verifiedName || '') + '" />\
+          <label>Role</label>\
+          <select class="unm-input" id="unm-profileRole">\
+            <option value="NONE"' + (settings.profileRole === 'NONE' ? ' selected' : '') + '>NONE</option>\
+            <option value="Admin"' + (settings.profileRole === 'Admin' ? ' selected' : '') + '>Admin</option>\
+            <option value="Moderator"' + (settings.profileRole === 'Moderator' ? ' selected' : '') + '>Moderator</option>\
+            <option value="VIP"' + (settings.profileRole === 'VIP' ? ' selected' : '') + '>VIP</option>\
+            <option value="Premium"' + (settings.profileRole === 'Premium' ? ' selected' : '') + '>Premium</option>\
+            <option value="Contributor"' + (settings.profileRole === 'Contributor' ? ' selected' : '') + '>Contributor</option>\
+          </select>\
+          <label>Border</label>\
+          <select class="unm-input" id="unm-profileBorder">\
+            <option value="NONE"' + (settings.profileBorder === 'NONE' ? ' selected' : '') + '>NONE</option>\
+            <option value="Gold"' + (settings.profileBorder === 'Gold' ? ' selected' : '') + '>Gold</option>\
+            <option value="Diamond"' + (settings.profileBorder === 'Diamond' ? ' selected' : '') + '>Diamond</option>\
+            <option value="Platinum"' + (settings.profileBorder === 'Platinum' ? ' selected' : '') + '>Platinum</option>\
+            <option value="Silver"' + (settings.profileBorder === 'Silver' ? ' selected' : '') + '>Silver</option>\
+          </select>\
+          <button class="unm-btn unm-danger" id="unm-saveProfile">Save</button>\
         </div>\
       </div>\
 \
@@ -235,8 +255,8 @@ function buildOverlayMenu() {
           <span class="unm-title">Simple Discord</span>\
         </div>\
         <div class="unm-list unm-settings">\
-          <label>Discord Invite URL</label>\
-          <input type="url" class="unm-input" id="unm-discordInvite" placeholder="https://discord.gg/..." value="' + escapeHtml(settings.discordInvite || '') + '" />\
+          <label><input type="checkbox" id="unm-discordDesktopRedirect" ' + (settings.discordDesktopRedirect !== false ? 'checked' : '') + ' /> Use Desktop Redirect</label>\
+          <button class="unm-btn unm-danger" id="unm-saveDiscord">Save</button>\
         </div>\
       </div>\
 \
@@ -311,20 +331,22 @@ function bindOverlayEvents() {
       const key = el.id.replace('unm-', '');
       // Map element IDs to settings keys
       const keyMap = {
-        'accentColor':     'accentColor',
-        'autoAcceptDelay': 'autoAcceptDelay',
-        'userCardDelay':   'userCardDelay',
-        'customStatus':    'customStatusText',
-        'vetoMaps':        'vetoMaps',
-        'showKD':          'showKD',
-        'showMMR':         'showMMR',
-        'showWinPct':      'showWinPct',
-        'discordInvite':   'discordInvite',
-        'adminColor':      'adminColor',
-        'modColor':        'modColor',
-        'vipColor':        'vipColor',
-        'compactMode':     'compactMode',
-        'hideFooter':      'hideFooter',
+        'accentColor':            'accentColor',
+        'autoAcceptDelay':        'autoAcceptDelay',
+        'userCardDelay':          'userCardDelay',
+        'verifiedName':           'verifiedName',
+        'profileRole':            'profileRole',
+        'profileBorder':          'profileBorder',
+        'vetoMaps':               'vetoMaps',
+        'showKD':                 'showKD',
+        'showMMR':                'showMMR',
+        'showWinPct':             'showWinPct',
+        'discordDesktopRedirect': 'discordDesktopRedirect',
+        'adminColor':             'adminColor',
+        'modColor':               'modColor',
+        'vipColor':               'vipColor',
+        'compactMode':            'compactMode',
+        'hideFooter':             'hideFooter',
       };
       const settingsKey = keyMap[key];
       if (!settingsKey) return;
@@ -339,6 +361,22 @@ function bindOverlayEvents() {
       applyFeatures();
     });
   });
+
+  // Save buttons
+  const saveProfile = $('#unm-saveProfile');
+  if (saveProfile) {
+    saveProfile.addEventListener('click', () => {
+      saveOverlaySettings();
+      applyProfileModifiers();
+    });
+  }
+
+  const saveDiscord = $('#unm-saveDiscord');
+  if (saveDiscord) {
+    saveDiscord.addEventListener('click', () => {
+      saveOverlaySettings();
+    });
+  }
 }
 
 function refreshToggleBtn(btn, key) {
@@ -452,15 +490,17 @@ function buildUserCard(data, anchor) {
   const name   = data?.username || data?.display_name || data?.displayName ||
                  data?.name || data?.user?.username || data?.user?.display_name ||
                  data?.player?.username || displayName;
-  const rank   = data?.rank       || data?.user?.rank    || '';
-  const status = data?.status     || data?.user?.status  || 'Free';
-  const avatar = data?.avatar     || data?.user?.avatar  || data?.profileImage || data?.avatar_url || '';
+  const userId = data?.id       || data?.user?.id    || data?.user_id   || null;
+  const status = data?.premium  ? 'Premium'
+               : (data?.tier    || data?.status      || data?.user?.status || 'Free');
+  const avatar = data?.avatar   || data?.user?.avatar || data?.profileImage || data?.avatar_url || '';
   const kd     = data?.stats?.kd  || data?.kd     || null;
-  const mmr    = data?.stats?.mmr || data?.mmr    || null;
-  const matches= data?.stats?.matches || data?.matches || null;
-  const winPct = data?.stats?.winRate || data?.stats?.win_rate || data?.winPct || null;
-  const game   = data?.stats?.game    || 'CS:GO';
-  const mode   = data?.stats?.mode    || '2v2';
+  const mmr    = data?.stats?.mmr || data?.mmr    || data?.stats?.elo || null;
+  const matches= data?.stats?.matches || data?.stats?.total_matches || data?.matches || null;
+  const winPct = data?.stats?.winRate || data?.stats?.win_rate ||
+                 data?.stats?.win_percentage || data?.winPct || null;
+  const game   = data?.stats?.game  || data?.stats?.current_game || 'CS:GO';
+  const mode   = data?.stats?.mode  || data?.stats?.queue || '2v2';
 
   const card = document.createElement('div');
   card.className = 'unm-user-card';
@@ -469,38 +509,48 @@ function buildUserCard(data, anchor) {
     ? '<img class="unm-card-avatar" src="' + escapeHtml(avatar) + '" alt="" />'
     : '<div class="unm-card-avatar-placeholder">?</div>';
 
-  const rankHtml = rank
-    ? ' <span class="unm-card-rank">#' + escapeHtml(String(rank)) + '</span>'
+  const tagHtml = userId !== null
+    ? ' <span class="unm-card-tag">#' + escapeHtml(String(userId)) + '</span>'
     : '';
 
-  const statsHtml = (kd !== null || mmr !== null) ? (
-    '<div class="unm-card-stats-row">' +
-    (settings.showKD && kd !== null
-      ? '<div class="unm-card-stat"><span class="unm-stat-label">K/D</span><span class="unm-stat-val">~' + parseFloat(kd).toFixed(2) + '</span></div>'
+  // K/D and MMR shown in the header right column (matching unm.pwr layout)
+  const kdNum = kd !== null ? parseFloat(kd) : null;
+  const headerStatsHtml = (
+    (settings.showKD && kdNum !== null && !isNaN(kdNum)
+      ? '<div class="unm-card-hstat"><span class="unm-stat-label">K/D:</span>&nbsp;<span class="unm-stat-val">~' + kdNum.toFixed(2) + '</span></div>'
       : '') +
     (settings.showMMR && mmr !== null
-      ? '<div class="unm-card-stat"><span class="unm-stat-label">MMR</span><span class="unm-stat-val">~' + escapeHtml(String(mmr)) + '</span></div>'
-      : '') +
-    '</div>'
-  ) : '';
+      ? '<div class="unm-card-hstat"><span class="unm-stat-label">MMR:</span>&nbsp;<span class="unm-stat-val">~' + escapeHtml(String(mmr)) + '</span></div>'
+      : '')
+  );
 
-  const winPctHtml = (settings.showWinPct && winPct !== null)
-    ? '&nbsp;&nbsp;<span class="unm-stat-label">Win %</span> <strong>' + escapeHtml(String(winPct)) + '%</strong>'
+  // Win % display: API may return a decimal ratio (e.g. 0.55) or a percentage integer (e.g. 55).
+  // Values clearly > 1 are treated as already-percentage; values in [0,1] are multiplied by 100.
+  const winPctNum = winPct !== null ? parseFloat(winPct) : null;
+  const winPctDisplay = (winPctNum !== null && !isNaN(winPctNum))
+    ? Math.round(winPctNum < 1 ? winPctNum * 100 : winPctNum) + '%'
+    : null;
+
+  const winPctHtml = (settings.showWinPct && winPctDisplay !== null)
+    ? '<div class="unm-card-game-stat"><span class="unm-stat-label">Win %</span><strong>' + escapeHtml(winPctDisplay) + '</strong></div>'
     : '';
 
   const gameHtml = matches !== null ? (
     '<div class="unm-card-game-section">' +
     '<div class="unm-card-game-label">' + escapeHtml(String(game)) + '</div>' +
     '<div class="unm-card-game-row"><span class="unm-card-mode">' + escapeHtml(String(mode)) + '</span>' +
-    '<div class="unm-card-game-stats"><span class="unm-stat-label">Matches</span> <strong>' + escapeHtml(String(matches)) + '</strong>' + winPctHtml + '</div>' +
-    '</div></div>'
+    '<div class="unm-card-game-stats">' +
+    '<div class="unm-card-game-stat"><span class="unm-stat-label">Matches</span><strong>' + escapeHtml(String(matches)) + '</strong></div>' +
+    winPctHtml +
+    '</div></div></div>'
   ) : '';
 
   card.innerHTML =
     '<div class="unm-card-header">' + avatarHtml +
-    '<div class="unm-card-info"><div class="unm-card-name">' + escapeHtml(name) + rankHtml + '</div>' +
-    '<div class="unm-card-status">' + escapeHtml(status) + '</div></div></div>' +
-    statsHtml + gameHtml;
+    '<div class="unm-card-info"><div class="unm-card-name">' + escapeHtml(name) + tagHtml + '</div>' +
+    '<div class="unm-card-status">' + escapeHtml(status) + '</div></div>' +
+    (headerStatsHtml ? '<div class="unm-card-header-stats">' + headerStatsHtml + '</div>' : '') +
+    '</div>' + gameHtml;
 
   return card;
 }
@@ -853,14 +903,90 @@ function applyWebsiteModifiers() {
       rules.push(':root { --unm-accent: ' + settings.accentColor + '; }');
     }
     if (settings.compactMode) {
-      rules.push('body { font-size: 13px; line-height: 1.3; }');
-      rules.push('p, li, td, th { line-height: 1.35; }');
+      // Compact mode: hide text labels from top nav icons, keep Play text visible.
+      // Target text-only child elements of nav links in the site header.
+      rules.push(
+        'header nav a > span,' +
+        'header nav a > div:not(:has(svg)):not(:has(img)),' +
+        'header [class*="nav"] a > span,' +
+        'header [class*="nav"] a > div:not(:has(svg)):not(:has(img)),' +
+        '[class*="header"] nav a > span,' +
+        '[class*="navbar"] a > span { display: none !important; }'
+      );
+      // Keep the Play button text visible
+      rules.push(
+        'header nav a[href*="/play"] > span,' +
+        'header nav a[href*="play"] > span,' +
+        'header [class*="nav"] a[href*="play"] > span,' +
+        '[class*="header"] nav a[href*="play"] > span,' +
+        '[class*="navbar"] a[href*="play"] > span { display: revert !important; }'
+      );
     }
     if (settings.hideFooter) {
       rules.push('footer, [class*="footer"] { display: none !important; }');
     }
   }
   styleEl.textContent = rules.join('\n');
+}
+
+// ── Profile Modifiers — inject verified name, role badge, border ──────────────
+function applyProfileModifiers() {
+  if (!settings.profileModifiers) return;
+
+  // Verified Name: inject a checkmark badge next to the logged-in user's name
+  if (settings.verifiedName) {
+    $$('[class*="username"], [class*="display-name"], [class*="profile-name"]').forEach(el => {
+      if (el.dataset.unmVerified) return;
+      el.dataset.unmVerified = '1';
+      const badge = document.createElement('span');
+      badge.className = 'unm-verified-badge';
+      badge.title = settings.verifiedName;
+      badge.textContent = ' ✓';
+      el.appendChild(badge);
+    });
+  }
+
+  // Role badge: inject a colored role label under the user's avatar/name
+  if (settings.profileRole && settings.profileRole !== 'NONE') {
+    $$('[class*="profile-role"], [class*="user-role"]').forEach(el => {
+      if (!el.dataset.unmRole) {
+        el.dataset.unmRole = '1';
+        el.textContent = settings.profileRole;
+      }
+    });
+  }
+
+  // Border: apply a CSS class to avatar elements on the current profile
+  const BORDER_COLORS = { Gold: '#ffd700', Diamond: '#b9f2ff', Platinum: '#e5e4e2', Silver: '#c0c0c0' };
+  let borderStyle = document.getElementById('unm-profile-border-style');
+  if (!borderStyle) {
+    borderStyle = document.createElement('style');
+    borderStyle.id = 'unm-profile-border-style';
+    document.head.appendChild(borderStyle);
+  }
+  const color = BORDER_COLORS[settings.profileBorder];
+  borderStyle.textContent = color
+    ? '[class*="avatar"] img, [class*="profile"] img.avatar { box-shadow: 0 0 0 3px ' + color + ' !important; border-radius: 8px; }'
+    : '';
+}
+
+// ── Simple Discord — intercept Discord links for desktop redirect ──────────────
+let _discordListenerAdded = false;
+function initSimpleDiscord() {
+  if (_discordListenerAdded) return;
+  _discordListenerAdded = true;
+  document.addEventListener('click', (e) => {
+    if (!settings.simpleDiscord || !settings.discordDesktopRedirect) return;
+    const a = e.target.closest('a[href]');
+    if (!a) return;
+    const href = a.href || '';
+    // Only redirect discord.gg invite links to the desktop app
+    const m = href.match(/https?:\/\/(?:www\.)?discord\.gg\/([^/?#]+)/);
+    if (m) {
+      e.preventDefault();
+      window.location.href = 'discord://invite/' + m[1];
+    }
+  }, true);
 }
 
 // ── Account Actions ───────────────────────────────────────────────────────────
@@ -910,6 +1036,7 @@ function handleAccountAction(action) {
 function applyFeatures() {
   removeAds();
   applyWebsiteModifiers();
+  applyProfileModifiers();
 }
 
 // ── Save Settings ─────────────────────────────────────────────────────────────
@@ -962,6 +1089,7 @@ function boot() {
     initAutoAdventRedeemer();
     initAutoVeto();
     initStealthStalking();
+    initSimpleDiscord();
     applyFeatures();
 
     if (!sessionStorage.getItem('unm-addon-booted')) {

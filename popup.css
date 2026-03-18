@@ -174,7 +174,8 @@ body {
 
 .setting-row input[type="text"],
 .setting-row input[type="number"],
-.setting-row input[type="url"] {
+.setting-row input[type="url"],
+.setting-row select {
   background: #1a1a2e;
   border: 1px solid rgba(255,255,255,0.15);
   border-radius: 4px;
@@ -187,7 +188,8 @@ body {
 
 .setting-row input[type="text"]:focus,
 .setting-row input[type="number"]:focus,
-.setting-row input[type="url"]:focus {
+.setting-row input[type="url"]:focus,
+.setting-row select:focus {
   border-color: #00c853;
 }
 

@@ -173,6 +173,7 @@
   padding: 6px 8px; width: 100%; outline: none; box-sizing: border-box;
 }
 .unm-input:focus { border-color: #00c853; }
+select.unm-input { cursor: pointer; }
 .unm-color {
   width: 50px; height: 28px; border: none; border-radius: 4px;
   cursor: pointer; background: transparent;
@@ -185,16 +186,16 @@
   background: #1a1a2e;
   border: 1px solid rgba(255,255,255,0.12);
   border-radius: 10px; padding: 14px;
-  min-width: 240px; max-width: 300px;
+  min-width: 260px; max-width: 320px;
   box-shadow: 0 6px 24px rgba(0,0,0,0.55);
   font-family: 'Segoe UI', Arial, sans-serif;
   color: #fff; font-size: 13px; pointer-events: auto;
 }
 .unm-card-loading { font-size: 12px; color: #888; padding: 10px 14px; }
-.unm-card-header { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
+.unm-card-header { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 10px; }
 .unm-card-avatar {
   width: 48px; height: 48px; border-radius: 8px;
-  object-fit: cover; border: 2px solid rgba(255,255,255,0.15);
+  object-fit: cover; border: 2px solid rgba(255,255,255,0.15); flex-shrink: 0;
 }
 .unm-card-avatar-placeholder {
   width: 48px; height: 48px; border-radius: 8px;
@@ -203,22 +204,23 @@
 }
 .unm-card-info { flex: 1; min-width: 0; }
 .unm-card-name { font-weight: 700; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.unm-card-rank { color: #888; font-weight: 400; font-size: 12px; }
+.unm-card-tag { color: #888; font-weight: 400; font-size: 12px; }
 .unm-card-status { font-size: 12px; color: #a0a0b8; margin-top: 2px; }
-.unm-card-stats-row {
-  display: flex; gap: 20px; padding: 8px 0;
-  border-top: 1px solid rgba(255,255,255,0.08);
-  border-bottom: 1px solid rgba(255,255,255,0.08); margin-bottom: 10px;
-}
-.unm-card-stat { display: flex; flex-direction: column; gap: 2px; }
+/* K/D and MMR in the right column of the header */
+.unm-card-header-stats { margin-left: auto; display: flex; flex-direction: column; gap: 4px; flex-shrink: 0; text-align: right; }
+.unm-card-hstat { display: flex; align-items: center; gap: 4px; justify-content: flex-end; font-size: 12px; }
 .unm-stat-label { font-size: 11px; color: #888; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
-.unm-stat-val { font-size: 15px; font-weight: 700; color: #fff; }
+.unm-stat-val { font-size: 13px; font-weight: 700; color: #fff; }
 .unm-card-game-section { background: rgba(255,255,255,0.05); border-radius: 6px; padding: 8px 10px; }
 .unm-card-game-label { font-size: 11px; color: #00c853; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
 .unm-card-game-row { display: flex; align-items: center; gap: 10px; }
 .unm-card-mode { background: rgba(0,200,83,0.18); color: #00c853; border-radius: 4px; padding: 3px 8px; font-size: 12px; font-weight: 700; }
-.unm-card-game-stats { font-size: 12px; color: #ccc; }
-.unm-card-game-stats strong { color: #fff; }
+.unm-card-game-stats { display: flex; gap: 16px; }
+.unm-card-game-stat { display: flex; flex-direction: column; gap: 1px; font-size: 12px; }
+.unm-card-game-stat strong { color: #fff; font-weight: 700; }
+
+/* ── Profile Modifier badges ── */
+.unm-verified-badge { color: #00c853; font-size: 12px; font-weight: 700; }
 
 /* ── Teammate Revealer Labels ── */
 .unm-party-label {

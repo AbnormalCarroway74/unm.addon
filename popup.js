@@ -2,34 +2,36 @@
 
 // ── Defaults ──────────────────────────────────────────────────────────────────
 const DEFAULTS = {
-  autoAccept:          true,
-  profileModifiers:    true,
-  websiteModifiers:    true,
-  customRoleColors:    true,
-  stealthStalking:     true,
-  trueStatus:          true,
-  acceptRevealer:      true,
-  teamChatRevealer:    true,
-  teammateRevealer:    true,
-  simpleDiscord:       true,
-  autoVeto:            false,
-  userCards:           true,
-  autoAdventRedeemer:  true,
-  adBlocker:           true,
-  autoAcceptDelay:     500,
-  userCardDelay:       400,
-  customStatusText:    '',
-  accentColor:         '#00c853',
-  compactMode:         false,
-  hideFooter:          false,
-  adminColor:          '#ff4444',
-  modColor:            '#ffaa00',
-  vipColor:            '#aa44ff',
-  discordInvite:       '',
-  vetoMaps:            '',
-  showKD:              true,
-  showMMR:             true,
-  showWinPct:          true,
+  autoAccept:               true,
+  profileModifiers:         true,
+  websiteModifiers:         true,
+  customRoleColors:         true,
+  stealthStalking:          true,
+  trueStatus:               true,
+  acceptRevealer:           true,
+  teamChatRevealer:         true,
+  teammateRevealer:         true,
+  simpleDiscord:            true,
+  autoVeto:                 false,
+  userCards:                true,
+  autoAdventRedeemer:       true,
+  adBlocker:                true,
+  autoAcceptDelay:          500,
+  userCardDelay:            400,
+  verifiedName:             '',
+  profileRole:              'NONE',
+  profileBorder:            'NONE',
+  accentColor:              '#00c853',
+  compactMode:              false,
+  hideFooter:               false,
+  adminColor:               '#ff4444',
+  modColor:                 '#ffaa00',
+  vipColor:                 '#aa44ff',
+  discordDesktopRedirect:   true,
+  vetoMaps:                 '',
+  showKD:                   true,
+  showMMR:                  true,
+  showWinPct:               true,
 };
 
 // ── State ─────────────────────────────────────────────────────────────────────
@@ -95,20 +97,22 @@ function handleAccountAction(action) {
 // ── Settings Page Sync ────────────────────────────────────────────────────────
 function syncSettingsInputs() {
   const fields = [
-    { id: 'autoAcceptDelay',  key: 'autoAcceptDelay',  type: 'number' },
-    { id: 'userCardDelay',    key: 'userCardDelay',     type: 'number' },
-    { id: 'customStatusText', key: 'customStatusText',  type: 'text'   },
-    { id: 'accentColor',      key: 'accentColor',       type: 'color'  },
-    { id: 'compactMode',      key: 'compactMode',       type: 'check'  },
-    { id: 'hideFooter',       key: 'hideFooter',        type: 'check'  },
-    { id: 'adminColor',       key: 'adminColor',        type: 'color'  },
-    { id: 'modColor',         key: 'modColor',          type: 'color'  },
-    { id: 'vipColor',         key: 'vipColor',          type: 'color'  },
-    { id: 'discordInvite',    key: 'discordInvite',     type: 'text'   },
-    { id: 'vetoMaps',         key: 'vetoMaps',          type: 'text'   },
-    { id: 'showKD',           key: 'showKD',            type: 'check'  },
-    { id: 'showMMR',          key: 'showMMR',           type: 'check'  },
-    { id: 'showWinPct',       key: 'showWinPct',        type: 'check'  },
+    { id: 'autoAcceptDelay',        key: 'autoAcceptDelay',        type: 'number' },
+    { id: 'userCardDelay',          key: 'userCardDelay',           type: 'number' },
+    { id: 'verifiedName',           key: 'verifiedName',            type: 'text'   },
+    { id: 'profileRole',            key: 'profileRole',             type: 'select' },
+    { id: 'profileBorder',          key: 'profileBorder',           type: 'select' },
+    { id: 'accentColor',            key: 'accentColor',             type: 'color'  },
+    { id: 'compactMode',            key: 'compactMode',             type: 'check'  },
+    { id: 'hideFooter',             key: 'hideFooter',              type: 'check'  },
+    { id: 'adminColor',             key: 'adminColor',              type: 'color'  },
+    { id: 'modColor',               key: 'modColor',                type: 'color'  },
+    { id: 'vipColor',               key: 'vipColor',                type: 'color'  },
+    { id: 'discordDesktopRedirect', key: 'discordDesktopRedirect',  type: 'check'  },
+    { id: 'vetoMaps',               key: 'vetoMaps',                type: 'text'   },
+    { id: 'showKD',                 key: 'showKD',                  type: 'check'  },
+    { id: 'showMMR',                key: 'showMMR',                 type: 'check'  },
+    { id: 'showWinPct',             key: 'showWinPct',              type: 'check'  },
   ];
 
   fields.forEach(({ id, key, type }) => {
@@ -188,13 +192,21 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // Save buttons in sub-pages
-  const saveDiscord = document.getElementById('saveDiscord');
-  if (saveDiscord) {
-    saveDiscord.addEventListener('click', () => {
-      const inv = document.getElementById('discordInvite');
-      settings.discordInvite = inv ? inv.value : '';
+  // Save Profile Modifiers
+  const saveProfileModifiers = document.getElementById('saveProfileModifiers');
+  if (saveProfileModifiers) {
+    saveProfileModifiers.addEventListener('click', () => {
       saveSettings();
+      notifyContentScript({ type: 'settingsUpdate', settings });
+    });
+  }
+
+  // Save Simple Discord
+  const saveSimpleDiscord = document.getElementById('saveSimpleDiscord');
+  if (saveSimpleDiscord) {
+    saveSimpleDiscord.addEventListener('click', () => {
+      saveSettings();
+      notifyContentScript({ type: 'settingsUpdate', settings });
     });
   }
 
