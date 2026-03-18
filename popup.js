@@ -11,6 +11,7 @@ const DEFAULTS = {
   trueStatus:          true,
   acceptRevealer:      true,
   teamChatRevealer:    true,
+  teammateRevealer:    true,
   simpleDiscord:       true,
   autoVeto:            false,
   userCards:           true,

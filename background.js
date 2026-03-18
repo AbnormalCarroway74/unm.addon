@@ -17,6 +17,7 @@ chrome.runtime.onInstalled.addListener(() => {
         trueStatus:          true,
         acceptRevealer:      true,
         teamChatRevealer:    true,
+        teammateRevealer:    true,
         simpleDiscord:       true,
         autoVeto:            false,
         userCards:           true,

@@ -11,6 +11,7 @@ const DEFAULTS = {
   trueStatus:          true,
   acceptRevealer:      true,
   teamChatRevealer:    true,
+  teammateRevealer:    true,
   simpleDiscord:       true,
   autoVeto:            false,
   userCards:           true,
@@ -45,66 +46,23 @@ function loadSettings(cb) {
 }
 
 // ── Puzzle Piece SVG ──────────────────────────────────────────────────────────
-const PUZZLE_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="18" height="18">
-  <path d="M20.5 11H19V7a2 2 0 0 0-2-2h-4V3.5a2.5 2.5 0 0 0-5 0V5H4a2 2 0 0 0-2 2v3.8h1.5a2.7 2.7 0 0 1 0 5.4H2V20a2 2 0 0 0 2 2h3.8v-1.5a2.7 2.7 0 0 1 5.4 0V22H17a2 2 0 0 0 2-2v-4h1.5a2.5 2.5 0 0 0 0-5z"/>
-</svg>`;
+const PUZZLE_SVG = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="20" height="20"><path d="M20.5 11H19V7a2 2 0 0 0-2-2h-4V3.5a2.5 2.5 0 0 0-5 0V5H4a2 2 0 0 0-2 2v3.8h1.5a2.7 2.7 0 0 1 0 5.4H2V20a2 2 0 0 0 2 2h3.8v-1.5a2.7 2.7 0 0 1 5.4 0V22H17a2 2 0 0 0 2-2v-4h1.5a2.5 2.5 0 0 0 0-5z"/></svg>';
 
-// ── Inject Tab-Bar Icon ───────────────────────────────────────────────────────
-function injectTabBarIcon() {
-  if ($('#unm-addon-tab-icon')) return;
+// ── Floating Action Button (bottom-right, godsense style) ─────────────────────
+function injectFloatingButton() {
+  if ($('#unm-addon-fab')) return;
 
-  const btn = document.createElement('button');
-  btn.id = 'unm-addon-tab-icon';
-  btn.className = 'unm-addon-tab-btn';
-  btn.title = 'unm.addon';
-  btn.innerHTML = PUZZLE_SVG;
-  btn.addEventListener('click', toggleOverlayMenu);
-
-  // Try several selectors for the notification/bell area in unmatched.gg's nav
-  const selectors = [
-    '.header-notification',
-    '[class*="notification-bell"]',
-    '[class*="notifications-icon"]',
-    '[class*="header-icons"]',
-    '.navbar-icons',
-    '[class*="nav-icons"]',
-    '[class*="header-right"]',
-    'header .right',
-    'nav .right',
-    '.header__right',
-    '#header-right',
-  ];
-
-  let inserted = false;
-  for (const sel of selectors) {
-    const el = $(sel);
-    if (el) {
-      el.insertAdjacentElement('afterbegin', btn);
-      inserted = true;
-      break;
-    }
-  }
-
-  if (!inserted) {
-    // Fallback: try to find the notification bell icon link/button
-    const notifCandidates = [
-      $('a[href*="notification"]'),
-      $('[class*="bell"]'),
-      $('[aria-label*="notification" i]'),
-      $('[title*="notification" i]'),
-    ].filter(Boolean);
-
-    if (notifCandidates.length > 0) {
-      notifCandidates[0].insertAdjacentElement('beforebegin', btn);
-      inserted = true;
-    }
-  }
-
-  if (!inserted) {
-    // Last resort: append to header/nav
-    const header = $('header') || $('nav') || $('.header') || $('[class*="header"]');
-    if (header) header.appendChild(btn);
-  }
+  const fab = document.createElement('button');
+  fab.id = 'unm-addon-fab';
+  fab.className = 'unm-fab';
+  fab.title = 'unm.addon';
+  fab.innerHTML = PUZZLE_SVG;
+  fab.setAttribute('aria-label', 'unm.addon menu');
+  fab.addEventListener('click', (e) => {
+    e.stopPropagation();
+    toggleOverlayMenu();
+  });
+  document.body.appendChild(fab);
 }
 
 // ── Overlay Menu ──────────────────────────────────────────────────────────────
@@ -117,34 +75,44 @@ function buildOverlayMenu() {
   overlay.id = 'unm-addon-overlay';
   overlay.className = 'unm-overlay';
 
+  const accentColor = settings.accentColor || '#00c853';
+  const vetoMaps = settings.vetoMaps || '';
+
+  const featureRow = (key, label, isDanger, gearPage) => {
+    const on = !!settings[key];
+    const cls = on ? (isDanger ? 'unm-danger' : 'unm-success') : 'unm-off';
+    const gear = gearPage
+      ? `<button class="unm-gear${isDanger ? ' unm-gear-danger' : ''}" data-page="${gearPage}">&#9881;</button>`
+      : '';
+    return `<div class="unm-row${gearPage ? ' unm-has-gear' : ''}"><button class="unm-btn ${cls} unm-toggle" data-key="${key}">${label}</button>${gear}</div>`;
+  };
+
   overlay.innerHTML = `
     <div class="unm-menu" id="unm-menu">
-
-      <!-- Features page -->
       <div class="unm-page active" id="unm-page-features">
         <div class="unm-toolbar">
           <button class="unm-back" data-target="unm-page-root">&#8592;</button>
           <span class="unm-title">unm.addon</span>
         </div>
         <div class="unm-list">
-          <div class="unm-row"><button class="unm-btn ${settings.powerWatermark?'unm-danger':'unm-off'} unm-toggle" data-key="powerWatermark">Power Watermark</button></div>
-          <div class="unm-row"><button class="unm-btn ${settings.autoAccept?'unm-success':'unm-off'} unm-toggle" data-key="autoAccept">Auto Accept</button></div>
-          <div class="unm-row unm-has-gear"><button class="unm-btn ${settings.profileModifiers?'unm-success':'unm-off'} unm-toggle" data-key="profileModifiers">Profile Modifiers</button><button class="unm-gear" data-page="unm-page-profile">&#9881;</button></div>
-          <div class="unm-row unm-has-gear"><button class="unm-btn ${settings.websiteModifiers?'unm-success':'unm-off'} unm-toggle" data-key="websiteModifiers">Website Modifiers</button><button class="unm-gear" data-page="unm-page-website">&#9881;</button></div>
-          <div class="unm-row unm-has-gear"><button class="unm-btn ${settings.customRoleColors?'unm-success':'unm-off'} unm-toggle" data-key="customRoleColors">Custom Role Colors</button><button class="unm-gear" data-page="unm-page-rolecolors">&#9881;</button></div>
-          <div class="unm-row"><button class="unm-btn ${settings.stealthStalking?'unm-success':'unm-off'} unm-toggle" data-key="stealthStalking">Stealth Stalking</button></div>
-          <div class="unm-row"><button class="unm-btn ${settings.trueStatus?'unm-success':'unm-off'} unm-toggle" data-key="trueStatus">True Status</button></div>
-          <div class="unm-row"><button class="unm-btn ${settings.acceptRevealer?'unm-success':'unm-off'} unm-toggle" data-key="acceptRevealer">Accept Revealer</button></div>
-          <div class="unm-row"><button class="unm-btn ${settings.teamChatRevealer?'unm-success':'unm-off'} unm-toggle" data-key="teamChatRevealer">Team Chat Revealer</button></div>
-          <div class="unm-row unm-has-gear"><button class="unm-btn ${settings.simpleDiscord?'unm-success':'unm-off'} unm-toggle" data-key="simpleDiscord">Simple Discord</button><button class="unm-gear" data-page="unm-page-discord">&#9881;</button></div>
-          <div class="unm-row unm-has-gear"><button class="unm-btn ${settings.autoVeto?'unm-danger':'unm-off'} unm-toggle" data-key="autoVeto">Auto Veto</button><button class="unm-gear unm-gear-danger" data-page="unm-page-veto">&#9881;</button></div>
-          <div class="unm-row unm-has-gear"><button class="unm-btn ${settings.userCards?'unm-success':'unm-off'} unm-toggle" data-key="userCards">User Cards</button><button class="unm-gear" data-page="unm-page-usercards">&#9881;</button></div>
-          <div class="unm-row"><button class="unm-btn ${settings.autoAdventRedeemer?'unm-success':'unm-off'} unm-toggle" data-key="autoAdventRedeemer">Auto Advent Redeemer</button></div>
-          <div class="unm-row"><button class="unm-btn ${settings.adBlocker?'unm-success':'unm-off'} unm-toggle" data-key="adBlocker">Ad Blocker</button></div>
+          ${featureRow('powerWatermark','Power Watermark',true,null)}
+          ${featureRow('autoAccept','Auto Accept',false,null)}
+          ${featureRow('profileModifiers','Profile Modifiers',false,'unm-page-profile')}
+          ${featureRow('websiteModifiers','Website Modifiers',false,'unm-page-website')}
+          ${featureRow('customRoleColors','Custom Role Colors',false,'unm-page-rolecolors')}
+          ${featureRow('stealthStalking','Stealth Stalking',false,null)}
+          ${featureRow('trueStatus','True Status',false,null)}
+          ${featureRow('acceptRevealer','Accept Revealer',false,null)}
+          ${featureRow('teamChatRevealer','Team Chat Revealer',false,null)}
+          ${featureRow('teammateRevealer','Teammate Revealer',false,null)}
+          ${featureRow('simpleDiscord','Simple Discord',false,'unm-page-discord')}
+          ${featureRow('autoVeto','Auto Veto',true,'unm-page-veto')}
+          ${featureRow('userCards','User Cards',false,'unm-page-usercards')}
+          ${featureRow('autoAdventRedeemer','Auto Advent Redeemer',false,null)}
+          ${featureRow('adBlocker','Ad Blocker',false,null)}
         </div>
       </div>
 
-      <!-- Root / meta page -->
       <div class="unm-page" id="unm-page-root">
         <div class="unm-toolbar">
           <button class="unm-back" data-target="unm-page-features">&#8592;</button>
@@ -156,7 +124,6 @@ function buildOverlayMenu() {
         </div>
       </div>
 
-      <!-- Account Manager -->
       <div class="unm-page" id="unm-page-account">
         <div class="unm-toolbar">
           <button class="unm-back" data-target="unm-page-root">&#8592;</button>
@@ -170,7 +137,6 @@ function buildOverlayMenu() {
         </div>
       </div>
 
-      <!-- Profile Modifiers -->
       <div class="unm-page" id="unm-page-profile">
         <div class="unm-toolbar">
           <button class="unm-back" data-target="unm-page-features">&#8592;</button>
@@ -182,7 +148,6 @@ function buildOverlayMenu() {
         </div>
       </div>
 
-      <!-- Website Modifiers -->
       <div class="unm-page" id="unm-page-website">
         <div class="unm-toolbar">
           <button class="unm-back" data-target="unm-page-features">&#8592;</button>
@@ -190,11 +155,10 @@ function buildOverlayMenu() {
         </div>
         <div class="unm-list unm-settings">
           <label>Accent Color</label>
-          <input type="color" class="unm-color" id="unm-accentColor" value="${settings.accentColor}" />
+          <input type="color" class="unm-color" id="unm-accentColor" value="${accentColor}" />
         </div>
       </div>
 
-      <!-- Custom Role Colors -->
       <div class="unm-page" id="unm-page-rolecolors">
         <div class="unm-toolbar">
           <button class="unm-back" data-target="unm-page-features">&#8592;</button>
@@ -210,7 +174,6 @@ function buildOverlayMenu() {
         </div>
       </div>
 
-      <!-- Auto Veto -->
       <div class="unm-page" id="unm-page-veto">
         <div class="unm-toolbar">
           <button class="unm-back" data-target="unm-page-features">&#8592;</button>
@@ -218,11 +181,10 @@ function buildOverlayMenu() {
         </div>
         <div class="unm-list unm-settings">
           <label>Maps to Veto (comma-separated)</label>
-          <input type="text" class="unm-input" id="unm-vetoMaps" placeholder="e.g. Dust2,Mirage" value="${settings.vetoMaps || ''}" />
+          <input type="text" class="unm-input" id="unm-vetoMaps" placeholder="e.g. Dust2,Mirage" value="${vetoMaps}" />
         </div>
       </div>
 
-      <!-- User Cards -->
       <div class="unm-page" id="unm-page-usercards">
         <div class="unm-toolbar">
           <button class="unm-back" data-target="unm-page-features">&#8592;</button>
@@ -235,7 +197,6 @@ function buildOverlayMenu() {
         </div>
       </div>
 
-      <!-- Simple Discord -->
       <div class="unm-page" id="unm-page-discord">
         <div class="unm-toolbar">
           <button class="unm-back" data-target="unm-page-features">&#8592;</button>
@@ -247,21 +208,24 @@ function buildOverlayMenu() {
         </div>
       </div>
 
-    </div><!-- /.unm-menu -->
+    </div>
   `;
 
   document.body.appendChild(overlay);
-
-  // Close on backdrop click
-  overlay.addEventListener('click', (e) => {
-    if (e.target === overlay) closeOverlayMenu();
-  });
-
   bindOverlayEvents();
+
+  // Close when clicking outside the menu panel
+  document.addEventListener('click', (e) => {
+    if (!overlayVisible) return;
+    const menu = $('#unm-menu');
+    const fab  = $('#unm-addon-fab');
+    if (menu && !menu.contains(e.target) && fab && !fab.contains(e.target)) {
+      closeOverlayMenu();
+    }
+  }, { capture: true });
 }
 
 function bindOverlayEvents() {
-  // Back buttons
   $$('.unm-back').forEach(btn => {
     btn.addEventListener('click', () => {
       const target = btn.dataset.target;
@@ -269,7 +233,6 @@ function bindOverlayEvents() {
     });
   });
 
-  // Navigation buttons
   $$('.unm-nav').forEach(btn => {
     btn.addEventListener('click', () => {
       const target = btn.dataset.target;
@@ -277,7 +240,6 @@ function bindOverlayEvents() {
     });
   });
 
-  // Gear buttons
   $$('.unm-gear').forEach(btn => {
     btn.addEventListener('click', () => {
       const page = btn.dataset.page;
@@ -285,7 +247,6 @@ function bindOverlayEvents() {
     });
   });
 
-  // Toggle buttons
   $$('.unm-toggle').forEach(btn => {
     btn.addEventListener('click', () => {
       const key = btn.dataset.key;
@@ -297,7 +258,6 @@ function bindOverlayEvents() {
     });
   });
 
-  // Action buttons (account manager)
   $$('.unm-action').forEach(btn => {
     btn.addEventListener('click', () => {
       handleAccountAction(btn.dataset.action);
@@ -313,7 +273,7 @@ function refreshToggleBtn(btn, key) {
 
 function overlayShowPage(pageId) {
   $$('.unm-page').forEach(p => p.classList.remove('active'));
-  const el = $(`#${pageId}`);
+  const el = document.getElementById(pageId);
   if (el) el.classList.add('active');
 }
 
@@ -324,17 +284,21 @@ function toggleOverlayMenu() {
 function openOverlayMenu() {
   buildOverlayMenu();
   const overlay = $('#unm-addon-overlay');
+  const fab = $('#unm-addon-fab');
   if (overlay) {
     overlay.classList.add('visible');
     overlayVisible = true;
+    if (fab) fab.classList.add('unm-fab-open');
   }
 }
 
 function closeOverlayMenu() {
   const overlay = $('#unm-addon-overlay');
+  const fab = $('#unm-addon-fab');
   if (overlay) {
     overlay.classList.remove('visible');
     overlayVisible = false;
+    if (fab) fab.classList.remove('unm-fab-open');
   }
 }
 
@@ -344,8 +308,7 @@ function showNotificationBanner(msg) {
   const banner = document.createElement('div');
   banner.id = 'unm-addon-banner';
   banner.className = 'unm-banner';
-  banner.innerHTML = `<span>${PUZZLE_SVG}</span><span class="unm-banner-text">unm.addon &middot; ${msg}</span>
-    <button class="unm-banner-close" title="Dismiss">&#10005;</button>`;
+  banner.innerHTML = '<span>' + PUZZLE_SVG + '</span><span class="unm-banner-text">unm.addon &middot; ' + msg + '</span><button class="unm-banner-close" title="Dismiss">&#10005;</button>';
   banner.querySelector('.unm-banner-close').addEventListener('click', () => banner.remove());
   document.body.insertAdjacentElement('afterbegin', banner);
   setTimeout(() => { if (banner.parentNode) banner.remove(); }, 8000);
@@ -357,7 +320,6 @@ let userCardTimer = null;
 let activeCardHref = null;
 
 async function fetchPlayerStats(username) {
-  // Try the unmatched.gg API endpoints
   const endpoints = [
     `/api/v1/users/${encodeURIComponent(username)}`,
     `/api/users/${encodeURIComponent(username)}`,
@@ -376,8 +338,9 @@ async function fetchPlayerStats(username) {
 }
 
 function buildUserCard(data, anchor) {
-  // Parse what we can from the API response
-  const name    = data?.username   || data?.name   || data?.user?.username || anchor.textContent.trim();
+  // Use visible link text as the display name — avoids showing numeric IDs from URLs
+  const displayName = anchor.textContent.trim() || '';
+  const name    = data?.username   || data?.name   || data?.user?.username || displayName;
   const rank    = data?.rank       || data?.user?.rank    || '';
   const status  = data?.status     || data?.user?.status  || 'Free';
   const avatar  = data?.avatar     || data?.user?.avatar  || data?.profileImage || '';
@@ -390,31 +353,39 @@ function buildUserCard(data, anchor) {
 
   const card = document.createElement('div');
   card.className = 'unm-user-card';
-  card.innerHTML = `
-    <div class="unm-card-header">
-      ${avatar ? `<img class="unm-card-avatar" src="${avatar}" alt="" />` : `<div class="unm-card-avatar-placeholder">?</div>`}
-      <div class="unm-card-info">
-        <div class="unm-card-name">${escapeHtml(name)}${rank ? ` <span class="unm-card-rank">#${rank}</span>` : ''}</div>
-        <div class="unm-card-status">${escapeHtml(status)}</div>
-      </div>
-    </div>
-    ${(kd !== null || mmr !== null) ? `
-    <div class="unm-card-stats-row">
-      ${(settings.showKD && kd !== null) ? `<div class="unm-card-stat"><span class="unm-stat-label">K/D</span><span class="unm-stat-val">~${parseFloat(kd).toFixed(2)}</span></div>` : ''}
-      ${(settings.showMMR && mmr !== null) ? `<div class="unm-card-stat"><span class="unm-stat-label">MMR</span><span class="unm-stat-val">~${mmr}</span></div>` : ''}
-    </div>` : ''}
-    ${matches !== null ? `
-    <div class="unm-card-game-section">
-      <div class="unm-card-game-label">${escapeHtml(game)}</div>
-      <div class="unm-card-game-row">
-        <span class="unm-card-mode">${escapeHtml(mode)}</span>
-        <div class="unm-card-game-stats">
-          <span class="unm-stat-label">Matches</span> <strong>${matches}</strong>
-          ${(settings.showWinPct && winPct !== null) ? `&nbsp;&nbsp;<span class="unm-stat-label">Win %</span> <strong>${winPct}%</strong>` : ''}
-        </div>
-      </div>
-    </div>` : ''}
-  `;
+
+  const avatarHtml = avatar
+    ? '<img class="unm-card-avatar" src="' + avatar + '" alt="" />'
+    : '<div class="unm-card-avatar-placeholder">?</div>';
+
+  const rankHtml = rank ? ' <span class="unm-card-rank">#' + escapeHtml(String(rank)) + '</span>' : '';
+
+  const statsHtml = (kd !== null || mmr !== null) ? (
+    '<div class="unm-card-stats-row">' +
+    (settings.showKD && kd !== null ? '<div class="unm-card-stat"><span class="unm-stat-label">K/D</span><span class="unm-stat-val">~' + parseFloat(kd).toFixed(2) + '</span></div>' : '') +
+    (settings.showMMR && mmr !== null ? '<div class="unm-card-stat"><span class="unm-stat-label">MMR</span><span class="unm-stat-val">~' + escapeHtml(String(mmr)) + '</span></div>' : '') +
+    '</div>'
+  ) : '';
+
+  const winPctHtml = (settings.showWinPct && winPct !== null)
+    ? '&nbsp;&nbsp;<span class="unm-stat-label">Win %</span> <strong>' + escapeHtml(String(winPct)) + '%</strong>'
+    : '';
+
+  const gameHtml = matches !== null ? (
+    '<div class="unm-card-game-section">' +
+    '<div class="unm-card-game-label">' + escapeHtml(String(game)) + '</div>' +
+    '<div class="unm-card-game-row">' +
+    '<span class="unm-card-mode">' + escapeHtml(String(mode)) + '</span>' +
+    '<div class="unm-card-game-stats"><span class="unm-stat-label">Matches</span> <strong>' + escapeHtml(String(matches)) + '</strong>' + winPctHtml + '</div>' +
+    '</div></div>'
+  ) : '';
+
+  card.innerHTML =
+    '<div class="unm-card-header">' + avatarHtml +
+    '<div class="unm-card-info"><div class="unm-card-name">' + escapeHtml(name) + rankHtml + '</div>' +
+    '<div class="unm-card-status">' + escapeHtml(status) + '</div></div></div>' +
+    statsHtml + gameHtml;
+
   return card;
 }
 
@@ -424,14 +395,13 @@ function positionCard(card, anchor) {
   const scrollY = window.scrollY;
 
   card.style.position = 'absolute';
-  card.style.left = `${rect.left + scrollX}px`;
-  card.style.top  = `${rect.bottom + scrollY + 6}px`;
+  card.style.left = (rect.left + scrollX) + 'px';
+  card.style.top  = (rect.bottom + scrollY + 6) + 'px';
 
-  // Ensure it doesn't overflow right edge
   setTimeout(() => {
     const cr = card.getBoundingClientRect();
     if (cr.right > window.innerWidth - 8) {
-      card.style.left = `${window.innerWidth - cr.width - 8 + scrollX}px`;
+      card.style.left = (window.innerWidth - cr.width - 8 + scrollX) + 'px';
     }
   }, 0);
 }
@@ -448,24 +418,27 @@ async function showUserCardFor(anchor) {
   const username = extractUsername(href);
   if (!username) return;
 
-  // Create a loading card placeholder
+  // Use the link's visible text as the display name — avoids showing numeric IDs from the URL
+  const displayName = anchor.textContent.trim() || username;
+
   const placeholder = document.createElement('div');
   placeholder.className = 'unm-user-card unm-card-loading';
-  placeholder.textContent = 'Loading…';
+  placeholder.textContent = 'Loading\u2026';
   document.body.appendChild(placeholder);
   positionCard(placeholder, anchor);
   userCardEl = placeholder;
 
   const data = await fetchPlayerStats(username);
-  if (activeCardHref !== href) return; // user moved away
+  if (activeCardHref !== href) return;
 
   placeholder.remove();
   if (!data) {
-    // Show minimal card with just the username from the link
     const fallback = document.createElement('div');
     fallback.className = 'unm-user-card';
-    fallback.innerHTML = `<div class="unm-card-header"><div class="unm-card-avatar-placeholder">?</div>
-      <div class="unm-card-info"><div class="unm-card-name">${escapeHtml(username)}</div><div class="unm-card-status">Free</div></div></div>`;
+    fallback.innerHTML =
+      '<div class="unm-card-header"><div class="unm-card-avatar-placeholder">?</div>' +
+      '<div class="unm-card-info"><div class="unm-card-name">' + escapeHtml(displayName) + '</div>' +
+      '<div class="unm-card-status">Free</div></div></div>';
     document.body.appendChild(fallback);
     positionCard(fallback, anchor);
     userCardEl = fallback;
@@ -497,7 +470,7 @@ function extractUsername(href) {
       try {
         return decodeURIComponent(m[1]);
       } catch (_) {
-        return m[1]; // return raw value if decoding fails
+        return m[1];
       }
     }
   }
@@ -508,7 +481,6 @@ function initUserCards() {
   document.addEventListener('mouseover', (e) => {
     const a = e.target.closest('a[href]');
     if (!a || !extractUsername(a.href)) return;
-
     clearTimeout(userCardTimer);
     userCardTimer = setTimeout(() => showUserCardFor(a), settings.userCardDelay || 400);
   });
@@ -517,16 +489,13 @@ function initUserCards() {
     const a = e.target.closest('a[href]');
     if (!a || !extractUsername(a.href)) return;
     clearTimeout(userCardTimer);
-    // Don't remove card immediately so user can move mouse onto it
     setTimeout(() => {
       if (userCardEl && !userCardEl.matches(':hover')) removeUserCard();
     }, 200);
   });
 
   document.addEventListener('mouseover', (e) => {
-    if (userCardEl && userCardEl.contains(e.target)) {
-      clearTimeout(userCardTimer);
-    }
+    if (userCardEl && userCardEl.contains(e.target)) clearTimeout(userCardTimer);
   });
 
   document.addEventListener('mouseout', (e) => {
@@ -570,8 +539,6 @@ function initAutoAccept() {
 function initAcceptRevealer() {
   const observer = new MutationObserver(debounce(() => {
     if (!settings.acceptRevealer) return;
-
-    // Reveal hidden accept status elements
     $$('[class*="accepted"]').forEach(el => {
       if (el.style.display === 'none' || el.style.visibility === 'hidden') {
         el.style.removeProperty('display');
@@ -580,7 +547,6 @@ function initAcceptRevealer() {
       }
     });
   }, 300));
-
   observer.observe(document.body, { childList: true, subtree: true });
 }
 
@@ -588,14 +554,65 @@ function initAcceptRevealer() {
 function initTeamChatRevealer() {
   const observer = new MutationObserver(debounce(() => {
     if (!settings.teamChatRevealer) return;
-
     $$('[class*="team-chat"] [class*="hidden"], [class*="team-message"][hidden]').forEach(el => {
       el.removeAttribute('hidden');
       el.style.removeProperty('display');
     });
   }, 300));
-
   observer.observe(document.body, { childList: true, subtree: true });
+}
+
+// ── Teammate Revealer ─────────────────────────────────────────────────────────
+// Labels players in lobbies/match screens as "Teammate" (queued together) or "Random"
+function initTeammateRevealer() {
+  const observer = new MutationObserver(debounce(runTeammateRevealer, 400));
+  // Only watch for new child nodes — attribute/text changes are not relevant here
+  observer.observe(document.body, { childList: true, subtree: true, attributes: false, characterData: false });
+  runTeammateRevealer();
+}
+
+function runTeammateRevealer() {
+  if (!settings.teammateRevealer) {
+    // Remove existing labels when feature is toggled off
+    $$('.unm-party-label').forEach(el => el.remove());
+    return;
+  }
+
+  // Common selectors for player entries in lobby / queue / match screens
+  const containerSelectors = [
+    '[class*="lobby-player"]',
+    '[class*="queue-player"]',
+    '[class*="match-player"]',
+    '[class*="team-member"]',
+    '[class*="player-row"]',
+    '[class*="party-member"]',
+    '[class*="lobby-member"]',
+  ];
+
+  containerSelectors.forEach(sel => {
+    $$(sel).forEach(playerEl => {
+      if (playerEl.querySelector('.unm-party-label')) return; // already labelled
+
+      // Detect party/squad membership via data attributes or CSS classes the site may use
+      const isTeammate =
+        playerEl.dataset.party !== undefined ||
+        playerEl.dataset.squad !== undefined ||
+        playerEl.dataset.queuedTogether === 'true' ||
+        playerEl.classList.contains('party') ||
+        playerEl.classList.contains('squad') ||
+        playerEl.classList.contains('grouped') ||
+        playerEl.querySelector('[class*="party-icon"]') !== null ||
+        playerEl.querySelector('[class*="squad-icon"]') !== null ||
+        playerEl.querySelector('[class*="grouped"]') !== null;
+
+      const label = document.createElement('span');
+      label.className = isTeammate
+        ? 'unm-party-label unm-party-teammate'
+        : 'unm-party-label unm-party-random';
+      label.textContent = isTeammate ? 'Teammate' : 'Random';
+      playerEl.appendChild(label);
+    });
+  });
 }
 
 // ── Ad Blocker ────────────────────────────────────────────────────────────────
@@ -646,13 +663,11 @@ function applyPowerWatermark() {
 function initAutoAdventRedeemer() {
   const observer = new MutationObserver(debounce(() => {
     if (!settings.autoAdventRedeemer) return;
-
     const redeemSelectors = [
       'button[class*="advent"]',
       'button[class*="redeem"]',
       '.advent-calendar button',
     ];
-
     for (const sel of redeemSelectors) {
       $$(sel).forEach(btn => {
         if (!btn.dataset.unmRedeemed) {
@@ -662,7 +677,6 @@ function initAutoAdventRedeemer() {
       });
     }
   }, 500));
-
   observer.observe(document.body, { childList: true, subtree: true });
 }
 
@@ -672,7 +686,6 @@ function initAutoVeto() {
     if (!settings.autoVeto) return;
     const mapsToVeto = (settings.vetoMaps || '').split(',').map(m => m.trim().toLowerCase()).filter(Boolean);
     if (!mapsToVeto.length) return;
-
     $$('[class*="veto-map"], [class*="map-veto"]').forEach(mapEl => {
       const mapName = mapEl.textContent.trim().toLowerCase();
       if (mapsToVeto.some(m => mapName.includes(m))) {
@@ -684,23 +697,19 @@ function initAutoVeto() {
       }
     });
   }, 400));
-
   observer.observe(document.body, { childList: true, subtree: true });
 }
 
 // ── Stealth Stalking ──────────────────────────────────────────────────────────
-// Keep original fetch in a closure-scoped variable to avoid global exposure
 let _stealthOrigFetch = null;
 let _stealthActive = false;
 
 function initStealthStalking() {
-  // Intercept profile view XHR by monkey-patching fetch
   if (settings.stealthStalking && !_stealthActive) {
     _stealthOrigFetch = window.fetch;
     _stealthActive = true;
     window.fetch = function(resource, init) {
       const url = typeof resource === 'string' ? resource : (resource && resource.url) || '';
-      // Suppress "profile viewed" ping
       if (url.includes('/profile/view') || url.includes('/viewed')) {
         return Promise.resolve(new Response('{}', { status: 200 }));
       }
@@ -796,30 +805,31 @@ function escapeHtml(str) {
 // ── Boot ──────────────────────────────────────────────────────────────────────
 function boot() {
   loadSettings(() => {
-    // Inject tab bar puzzle piece icon
-    injectTabBarIcon();
+    // Inject floating action button in the bottom-right corner (godsense style)
+    injectFloatingButton();
 
-    // Observe DOM changes to re-inject if SPA navigates
-    const headerObserver = new MutationObserver(debounce(() => {
-      if (!$('#unm-addon-tab-icon')) injectTabBarIcon();
-    }, 500));
-    headerObserver.observe(document.body, { childList: true, subtree: true });
+    // Re-inject the FAB if SPA navigation removes it
+    const fabObserver = new MutationObserver(debounce(() => {
+      if (!$('#unm-addon-fab')) injectFloatingButton();
+    }, 600));
+    fabObserver.observe(document.body, { childList: true, subtree: false });
 
     // Init features
     initUserCards();
     initAutoAccept();
     initAcceptRevealer();
     initTeamChatRevealer();
+    initTeammateRevealer();
     initAdBlocker();
     initAutoAdventRedeemer();
     initAutoVeto();
     initStealthStalking();
     applyFeatures();
 
-    // Show a welcome notification once per session
+    // Session welcome banner
     if (!sessionStorage.getItem('unm-addon-booted')) {
       sessionStorage.setItem('unm-addon-booted', '1');
-      showNotificationBanner('unm.addon loaded — click the puzzle-piece icon in the header to manage features.');
+      showNotificationBanner('Active \u2014 click the puzzle-piece button in the bottom-right corner to manage features.');
     }
   });
 }

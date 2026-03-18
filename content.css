@@ -1,32 +1,5 @@
 /* ── unm.addon content styles ── */
 
-/* Tab-bar puzzle piece button */
-.unm-addon-tab-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  background: transparent;
-  border: none;
-  color: #fff;
-  cursor: pointer;
-  padding: 4px 6px;
-  border-radius: 6px;
-  transition: background 0.18s, color 0.18s;
-  vertical-align: middle;
-  margin: 0 4px;
-  opacity: 0.85;
-}
-
-.unm-addon-tab-btn:hover {
-  background: rgba(255, 255, 255, 0.12);
-  opacity: 1;
-}
-
-.unm-addon-tab-btn svg {
-  display: block;
-  pointer-events: none;
-}
-
 /* ── Notification Banner ── */
 .unm-banner {
   position: fixed;
@@ -45,13 +18,9 @@
   box-shadow: 0 2px 8px rgba(0,0,0,0.35);
 }
 
-.unm-banner svg {
-  flex-shrink: 0;
-}
+.unm-banner svg { flex-shrink: 0; }
 
-.unm-banner-text {
-  flex: 1;
-}
+.unm-banner-text { flex: 1; }
 
 .unm-banner-close {
   background: transparent;
@@ -63,46 +32,67 @@
   line-height: 1;
 }
 
-.unm-banner-close:hover {
+.unm-banner-close:hover { color: #fff; }
+
+/* ── Floating Action Button (bottom-right, godsense style) ── */
+.unm-fab {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  z-index: 2147483646;
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  background: #c62828;
+  border: 2px solid rgba(255,255,255,0.18);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 18px rgba(0,0,0,0.55);
+  transition: transform 0.18s, filter 0.18s;
   color: #fff;
+  padding: 0;
 }
 
-/* ── Overlay Backdrop ── */
+.unm-fab:hover {
+  filter: brightness(1.18);
+  transform: scale(1.06);
+}
+
+.unm-fab.unm-fab-open {
+  transform: rotate(15deg) scale(1.06);
+  filter: brightness(1.15);
+}
+
+.unm-fab svg { display: block; pointer-events: none; }
+
+/* ── Overlay panel — anchored above the FAB ── */
 .unm-overlay {
   display: none;
   position: fixed;
-  inset: 0;
-  z-index: 2147483646;
-  background: rgba(0, 0, 0, 0.5);
-  align-items: center;
-  justify-content: center;
+  bottom: 74px;   /* 46px FAB height + 20px FAB bottom + 8px gap */
+  right: 16px;
+  z-index: 2147483645;
 }
 
-.unm-overlay.visible {
-  display: flex;
-}
+.unm-overlay.visible { display: block; }
 
 /* ── Overlay Menu ── */
 .unm-menu {
   background: #0d0d1a;
   border-radius: 8px;
   width: 280px;
-  max-height: 85vh;
+  max-height: calc(100vh - 100px);
   overflow-y: auto;
-  box-shadow: 0 8px 32px rgba(0,0,0,0.6);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.65);
   font-family: 'Segoe UI', Arial, sans-serif;
   color: #fff;
 }
 
 /* ── Pages within overlay ── */
-.unm-page {
-  display: none;
-  flex-direction: column;
-}
-
-.unm-page.active {
-  display: flex;
-}
+.unm-page { display: none; flex-direction: column; }
+.unm-page.active { display: flex; }
 
 /* ── Toolbar ── */
 .unm-toolbar {
@@ -129,9 +119,7 @@
   transition: background 0.15s;
 }
 
-.unm-back:hover {
-  background: rgba(255,255,255,0.22);
-}
+.unm-back:hover { background: rgba(255,255,255,0.22); }
 
 .unm-title {
   font-weight: 600;
@@ -148,14 +136,8 @@
   gap: 4px;
 }
 
-.unm-row {
-  display: flex;
-  gap: 3px;
-}
-
-.unm-row.unm-has-gear .unm-btn {
-  flex: 1;
-}
+.unm-row { display: flex; gap: 3px; }
+.unm-row.unm-has-gear .unm-btn { flex: 1; }
 
 /* ── Buttons ── */
 .unm-btn {
@@ -201,9 +183,7 @@
 .unm-gear.unm-gear-danger { background: #7b1c1c; }
 
 /* ── Settings rows within overlay ── */
-.unm-settings {
-  gap: 8px;
-}
+.unm-settings { gap: 8px; }
 
 .unm-settings label {
   font-size: 12px;
@@ -226,9 +206,7 @@
   box-sizing: border-box;
 }
 
-.unm-input:focus {
-  border-color: #00c853;
-}
+.unm-input:focus { border-color: #00c853; }
 
 .unm-color {
   width: 50px;
@@ -290,10 +268,7 @@
   flex-shrink: 0;
 }
 
-.unm-card-info {
-  flex: 1;
-  min-width: 0;
-}
+.unm-card-info { flex: 1; min-width: 0; }
 
 .unm-card-name {
   font-weight: 700;
@@ -303,17 +278,9 @@
   text-overflow: ellipsis;
 }
 
-.unm-card-rank {
-  color: #888;
-  font-weight: 400;
-  font-size: 12px;
-}
+.unm-card-rank { color: #888; font-weight: 400; font-size: 12px; }
 
-.unm-card-status {
-  font-size: 12px;
-  color: #a0a0b8;
-  margin-top: 2px;
-}
+.unm-card-status { font-size: 12px; color: #a0a0b8; margin-top: 2px; }
 
 .unm-card-stats-row {
   display: flex;
@@ -324,11 +291,7 @@
   margin-bottom: 10px;
 }
 
-.unm-card-stat {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
+.unm-card-stat { display: flex; flex-direction: column; gap: 2px; }
 
 .unm-stat-label {
   font-size: 11px;
@@ -338,11 +301,7 @@
   letter-spacing: 0.5px;
 }
 
-.unm-stat-val {
-  font-size: 15px;
-  font-weight: 700;
-  color: #fff;
-}
+.unm-stat-val { font-size: 15px; font-weight: 700; color: #fff; }
 
 .unm-card-game-section {
   background: rgba(255,255,255,0.05);
@@ -359,11 +318,7 @@
   margin-bottom: 6px;
 }
 
-.unm-card-game-row {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
+.unm-card-game-row { display: flex; align-items: center; gap: 10px; }
 
 .unm-card-mode {
   background: rgba(0, 200, 83, 0.18);
@@ -374,21 +329,41 @@
   font-weight: 700;
 }
 
-.unm-card-game-stats {
-  font-size: 12px;
-  color: #ccc;
+.unm-card-game-stats { font-size: 12px; color: #ccc; }
+.unm-card-game-stats strong { color: #fff; }
+
+/* ── Teammate Revealer Labels ── */
+.unm-party-label {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  border-radius: 3px;
+  padding: 2px 6px;
+  margin-left: 6px;
+  vertical-align: middle;
+  pointer-events: none;
 }
 
-.unm-card-game-stats strong {
-  color: #fff;
+.unm-party-teammate {
+  background: rgba(0, 200, 83, 0.22);
+  color: #00c853;
+  border: 1px solid rgba(0, 200, 83, 0.4);
+}
+
+.unm-party-random {
+  background: rgba(255, 255, 255, 0.08);
+  color: #aaa;
+  border: 1px solid rgba(255,255,255,0.15);
 }
 
 /* ── Power Watermark ── */
 .unm-watermark {
   position: fixed;
-  bottom: 12px;
-  right: 12px;
-  z-index: 2147483644;
+  bottom: 74px;  /* sit just above the FAB */
+  right: 20px;
+  z-index: 2147483643;
   background: rgba(0, 200, 83, 0.15);
   border: 1px solid #00c853;
   color: #00c853;

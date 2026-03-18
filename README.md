@@ -24,7 +24,7 @@ A browser extension that adds powerful features to [unmatched.gg](https://unmatc
 
 ## Extension icon
 
-The toolbar icon is a **puzzle piece** (replacing the previous crosshair). The same puzzle-piece button is also injected directly into the unmatched.gg site header, next to the notification bell — clicking it opens the full feature-menu overlay without leaving the page.
+The toolbar icon is a **puzzle piece** (replacing the previous crosshair). A circular red puzzle-piece floating action button is fixed in the **bottom-right corner** of the unmatched.gg page — clicking it opens the full feature-menu overlay without leaving the page.
 
 ## Installation (developer mode)
 
