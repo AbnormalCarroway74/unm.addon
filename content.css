@@ -232,6 +232,9 @@ select.unm-input { cursor: pointer; }
 .unm-party-teammate { background: rgba(0,200,83,0.22); color: #00c853; border: 1px solid rgba(0,200,83,0.4); }
 .unm-party-random   { background: rgba(255,255,255,0.08); color: #aaa; border: 1px solid rgba(255,255,255,0.15); }
 
+/* ── Compact Mode — JS-applied class hides nav text labels ── */
+.unm-compact-text { display: none !important; }
+
 /* ── Power Watermark (off by default) ── */
 .unm-watermark {
   position: fixed; bottom: 70px; right: 76px;

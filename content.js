@@ -466,41 +466,88 @@ function getAnchorDisplayName(anchor) {
 }
 
 async function fetchPlayerStats(username) {
-  // unmatched.gg API endpoints — username may be a numeric ID
-  const endpoints = [
+  // Try REST API endpoints first
+  const apiEndpoints = [
     '/api/v1/users/' + encodeURIComponent(username),
     '/api/users/' + encodeURIComponent(username),
+    '/api/v1/profile/' + encodeURIComponent(username),
+    '/api/profile/' + encodeURIComponent(username),
   ];
 
-  for (const ep of endpoints) {
+  for (const ep of apiEndpoints) {
     try {
       const res = await fetch(ep, { credentials: 'include' });
       if (res.ok) {
         const data = await res.json();
-        return data;
+        if (data && (data.username || data.id || data.user || data.name)) return data;
       }
     } catch (_) { /* try next */ }
   }
-  return null;
+
+  // Fallback: fetch the profile page and extract __NEXT_DATA__
+  return fetchPlayerStatsFromPage(username);
+}
+
+async function fetchPlayerStatsFromPage(username) {
+  try {
+    const res = await fetch('/users/' + encodeURIComponent(username), { credentials: 'include' });
+    if (!res.ok) return null;
+    const html = await res.text();
+
+    // Extract Next.js embedded data
+    const match = html.match(/<script id="__NEXT_DATA__"[^>]*>([\s\S]*?)<\/script>/);
+    if (!match) return null;
+
+    const nextData = JSON.parse(match[1]);
+    const pp = nextData?.props?.pageProps;
+    if (!pp) return null;
+
+    // Try multiple paths for user data in Next.js pageProps
+    return pp.user || pp.userData || pp.data?.user || pp.profile || pp.data || null;
+  } catch (_) { return null; }
 }
 
 function buildUserCard(data, anchor) {
   const displayName = getAnchorDisplayName(anchor);
-  // Widen the field search to match various API shapes unmatched.gg might return
-  const name   = data?.username || data?.display_name || data?.displayName ||
-                 data?.name || data?.user?.username || data?.user?.display_name ||
-                 data?.player?.username || displayName;
-  const userId = data?.id       || data?.user?.id    || data?.user_id   || null;
-  const status = data?.premium  ? 'Premium'
-               : (data?.tier    || data?.status      || data?.user?.status || 'Free');
-  const avatar = data?.avatar   || data?.user?.avatar || data?.profileImage || data?.avatar_url || '';
-  const kd     = data?.stats?.kd  || data?.kd     || null;
-  const mmr    = data?.stats?.mmr || data?.mmr    || data?.stats?.elo || null;
-  const matches= data?.stats?.matches || data?.stats?.total_matches || data?.matches || null;
-  const winPct = data?.stats?.winRate || data?.stats?.win_rate ||
-                 data?.stats?.win_percentage || data?.winPct || null;
-  const game   = data?.stats?.game  || data?.stats?.current_game || 'CS:GO';
-  const mode   = data?.stats?.mode  || data?.stats?.queue || '2v2';
+
+  // Unwrap user root — Next.js pageProps may nest under 'user'
+  const u = data?.user || data;
+
+  const name   = u?.username || u?.name || u?.displayName || u?.display_name ||
+                 data?.username || data?.name || displayName;
+  const userId = u?.id ?? data?.id ?? null;
+  const status = u?.premium ? 'Premium'
+               : (u?.tier || u?.status || data?.tier || data?.status || 'Free');
+  const avatar = u?.avatar || u?.avatarUrl || u?.avatar_url || u?.profileImage ||
+                 data?.avatar || data?.avatar_url || '';
+
+  // Stats may come from a games array (Next.js scraped structure) or direct stats
+  let kd = null, mmr = null, matches = null, winPct = null, game = 'CS:GO', mode = '2v2';
+
+  const gamesArr = u?.games || u?.game_stats || data?.games || [];
+  if (gamesArr.length > 0) {
+    // Prefer the game with the most matches played
+    const activeGame = gamesArr.slice().sort((a, b) =>
+      ((b.matches || b.matches_played || 0) - (a.matches || a.matches_played || 0))
+    )[0];
+    if (activeGame) {
+      kd      = activeGame.kd || activeGame.kdRatio || activeGame.kill_death_ratio || null;
+      mmr     = activeGame.mmr || activeGame.elo || activeGame.rating || null;
+      matches = activeGame.matches || activeGame.matches_played || activeGame.total_matches || null;
+      winPct  = activeGame.winRate || activeGame.win_rate || activeGame.win_percentage || null;
+      game    = activeGame.game || activeGame.name || activeGame.slug || 'CS:GO';
+      mode    = activeGame.mode || activeGame.queue || activeGame.type || '2v2';
+    }
+  } else {
+    // Direct stats fallback
+    const s = u?.stats || data?.stats || {};
+    kd      = s.kd      || u?.kd      || data?.kd      || null;
+    mmr     = s.mmr     || s.elo      || u?.mmr     || data?.mmr     || null;
+    matches = s.matches || s.total_matches || u?.matches || data?.matches || null;
+    winPct  = s.winRate || s.win_rate || s.win_percentage || u?.winPct || data?.winPct || null;
+    game    = s.game    || s.current_game || 'CS:GO';
+    mode    = s.mode    || s.queue    || '2v2';
+  }
 
   const card = document.createElement('div');
   card.className = 'unm-user-card';
@@ -524,8 +571,7 @@ function buildUserCard(data, anchor) {
       : '')
   );
 
-  // Win % display: API may return a decimal ratio (e.g. 0.55) or a percentage integer (e.g. 55).
-  // Values clearly > 1 are treated as already-percentage; values in [0,1] are multiplied by 100.
+  // Win % display: API may return decimal (0.55) or integer (55)
   const winPctNum = winPct !== null ? parseFloat(winPct) : null;
   const winPctDisplay = (winPctNum !== null && !isNaN(winPctNum))
     ? Math.round(winPctNum < 1 ? winPctNum * 100 : winPctNum) + '%'
@@ -625,6 +671,7 @@ function removeUserCard() {
 function extractUsername(href) {
   if (!href) return null;
   const patterns = [
+    /\/users\/([^/?#]+)/,    // unmatched.gg primary pattern
     /\/user\/([^/?#]+)/,
     /\/profile\/([^/?#]+)/,
     /\/players\/([^/?#]+)/,
@@ -903,30 +950,92 @@ function applyWebsiteModifiers() {
       rules.push(':root { --unm-accent: ' + settings.accentColor + '; }');
     }
     if (settings.compactMode) {
-      // Compact mode: hide text labels from top nav icons, keep Play text visible.
-      // Target text-only child elements of nav links in the site header.
+      // CSS `:has(svg)` backup — hides text spans inside nav links that also contain an icon.
+      // This covers cases where text is in a <span> sibling of <svg>.
+      // Chrome extension target is Chrome ≥ 105 which supports :has().
       rules.push(
-        'header nav a > span,' +
-        'header nav a > div:not(:has(svg)):not(:has(img)),' +
-        'header [class*="nav"] a > span,' +
-        'header [class*="nav"] a > div:not(:has(svg)):not(:has(img)),' +
-        '[class*="header"] nav a > span,' +
-        '[class*="navbar"] a > span { display: none !important; }'
+        'header a:has(svg) > span, header a:has(svg) > p, header button:has(svg) > span,' +
+        '[class*="nav"] a:has(svg) > span, [class*="navbar"] a:has(svg) > span,' +
+        '[class*="Header"] a:has(svg) > span, [class*="Navbar"] a:has(svg) > span' +
+        ' { display: none !important; }'
       );
-      // Keep the Play button text visible
+      // Keep the Play link text visible (unmatched.gg Play button is at /play)
       rules.push(
-        'header nav a[href*="/play"] > span,' +
-        'header nav a[href*="play"] > span,' +
-        'header [class*="nav"] a[href*="play"] > span,' +
-        '[class*="header"] nav a[href*="play"] > span,' +
-        '[class*="navbar"] a[href*="play"] > span { display: revert !important; }'
+        'header a[href="/play"] > span, header a[href="/play"] > p,' +
+        '[class*="nav"] a[href="/play"] > span, [class*="navbar"] a[href="/play"] > span,' +
+        '[class*="Header"] a[href="/play"] > span, [class*="Navbar"] a[href="/play"] > span' +
+        ' { display: revert !important; }'
       );
+      // JS-based compact mode runs separately via applyCompactModeJS()
     }
     if (settings.hideFooter) {
       rules.push('footer, [class*="footer"] { display: none !important; }');
     }
   }
   styleEl.textContent = rules.join('\n');
+
+  // Apply or remove JS-based compact mode
+  if (settings.websiteModifiers && settings.compactMode) {
+    applyCompactModeJS();
+  } else {
+    // Remove any previously applied compact-mode text hiding
+    $$('.unm-compact-text').forEach(el => {
+      el.classList.remove('unm-compact-text');
+      delete el.dataset.unmCt;
+    });
+  }
+}
+
+// ── Compact Mode (JS) — hides text labels in site nav, keeps "Play" visible ───
+function applyCompactModeJS() {
+  // Candidate containers for the site's top navigation
+  const containerSelectors = [
+    'header', '[class*="Header"]', '[class*="Navbar"]', '[class*="navbar"]',
+    '[class*="TopBar"]', '[class*="topBar"]', '[class*="NavBar"]',
+  ];
+
+  containerSelectors.forEach(sel => {
+    $$(sel).forEach(container => {
+      // Walk every anchor/button inside this container
+      $$('a[href], button', container).forEach(link => {
+        const href = (link.getAttribute('href') || '').toLowerCase();
+        const linkText = (link.textContent || '').trim().toLowerCase();
+
+        // ALWAYS keep the Play link untouched
+        if (href === '/play' || href.endsWith('/play') || linkText === 'play') return;
+
+        // Only process links that have an icon (SVG/img/i) — pure-text buttons are left alone
+        if (!link.querySelector('svg, img, i[class]')) return;
+
+        // Walk direct children and hide text-only elements
+        Array.from(link.childNodes).forEach(node => {
+          if (node.nodeType === Node.TEXT_NODE) {
+            if (node.textContent.trim()) {
+              // Wrap bare text nodes in a span so we can hide them
+              if (!node._unmCtWrapped) {
+                const s = document.createElement('span');
+                s.className = 'unm-compact-text';
+                s.dataset.unmCt = '1';
+                node._unmCtWrapped = s;
+                link.insertBefore(s, node);
+                s.appendChild(node);
+              }
+            }
+          } else if (node.nodeType === Node.ELEMENT_NODE) {
+            const el = node;
+            if (el.dataset.unmCt) return; // already processed
+            // Hide element if it has no icon descendants and has visible text
+            const hasIcon = el.querySelector('svg, img, i[class]') ||
+                            el.tagName === 'svg' || el.tagName === 'SVG';
+            if (!hasIcon && el.textContent.trim()) {
+              el.classList.add('unm-compact-text');
+              el.dataset.unmCt = '1';
+            }
+          }
+        });
+      });
+    });
+  });
 }
 
 // ── Profile Modifiers — inject verified name, role badge, border ──────────────
@@ -1091,6 +1200,12 @@ function boot() {
     initStealthStalking();
     initSimpleDiscord();
     applyFeatures();
+
+    // Re-apply compact mode whenever the SPA re-renders the header
+    const compactObserver = new MutationObserver(debounce(() => {
+      if (settings.websiteModifiers && settings.compactMode) applyCompactModeJS();
+    }, 500));
+    compactObserver.observe(document.body, { childList: true, subtree: true });
 
     if (!sessionStorage.getItem('unm-addon-booted')) {
       sessionStorage.setItem('unm-addon-booted', '1');
