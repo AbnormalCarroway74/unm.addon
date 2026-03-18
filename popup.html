@@ -9,90 +9,11 @@
 <body>
   <div id="app">
 
-    <!-- ── FEATURES PAGE (default) ── -->
-    <div id="page-features" class="page active">
+    <!-- ── ROOT PAGE (default) ── -->
+    <div id="page-root" class="page active">
       <div class="page-toolbar">
-        <button class="back-btn" data-target="page-root" title="Back">&#8592;</button>
-        <span class="page-title">unm.addon</span>
+        <span class="page-title page-title-brand">unm.addon</span>
       </div>
-
-      <div class="feature-list">
-        <!-- Red special features -->
-        <div class="feature-row">
-          <button class="feat-btn danger toggle-btn" data-key="powerWatermark">Power Watermark</button>
-        </div>
-
-        <div class="feature-row">
-          <button class="feat-btn success toggle-btn" data-key="autoAccept">Auto Accept</button>
-        </div>
-
-        <div class="feature-row has-gear">
-          <button class="feat-btn success toggle-btn" data-key="profileModifiers">Profile Modifiers</button>
-          <button class="gear-btn" data-settings="profileModifiers" title="Settings">&#9881;</button>
-        </div>
-
-        <div class="feature-row has-gear">
-          <button class="feat-btn success toggle-btn" data-key="websiteModifiers">Website Modifiers</button>
-          <button class="gear-btn" data-settings="websiteModifiers" title="Settings">&#9881;</button>
-        </div>
-
-        <div class="feature-row has-gear">
-          <button class="feat-btn success toggle-btn" data-key="customRoleColors">Custom Role Colors</button>
-          <button class="gear-btn" data-settings="customRoleColors" title="Settings">&#9881;</button>
-        </div>
-
-        <div class="feature-row">
-          <button class="feat-btn success toggle-btn" data-key="stealthStalking">Stealth Stalking</button>
-        </div>
-
-        <div class="feature-row">
-          <button class="feat-btn success toggle-btn" data-key="trueStatus">True Status</button>
-        </div>
-
-        <div class="feature-row">
-          <button class="feat-btn success toggle-btn" data-key="acceptRevealer">Accept Revealer</button>
-        </div>
-
-        <div class="feature-row">
-          <button class="feat-btn success toggle-btn" data-key="teamChatRevealer">Team Chat Revealer</button>
-        </div>
-
-        <div class="feature-row">
-          <button class="feat-btn success toggle-btn" data-key="teammateRevealer">Teammate Revealer</button>
-        </div>
-
-        <div class="feature-row has-gear">
-          <button class="feat-btn success toggle-btn" data-key="simpleDiscord">Simple Discord</button>
-          <button class="gear-btn" data-settings="simpleDiscord" title="Settings">&#9881;</button>
-        </div>
-
-        <div class="feature-row has-gear">
-          <button class="feat-btn danger toggle-btn" data-key="autoVeto">Auto Veto</button>
-          <button class="gear-btn danger" data-settings="autoVeto" title="Settings">&#9881;</button>
-        </div>
-
-        <div class="feature-row has-gear">
-          <button class="feat-btn success toggle-btn" data-key="userCards">User Cards</button>
-          <button class="gear-btn" data-settings="userCards" title="Settings">&#9881;</button>
-        </div>
-
-        <div class="feature-row">
-          <button class="feat-btn success toggle-btn" data-key="autoAdventRedeemer">Auto Advent Redeemer</button>
-        </div>
-
-        <div class="feature-row">
-          <button class="feat-btn success toggle-btn" data-key="adBlocker">Ad Blocker</button>
-        </div>
-      </div>
-    </div>
-
-    <!-- ── ROOT / META PAGE ── -->
-    <div id="page-root" class="page">
-      <div class="page-toolbar">
-        <button class="back-btn" data-target="page-features" title="Back">&#8592;</button>
-        <span class="page-title">unm.addon</span>
-      </div>
-
       <div class="feature-list">
         <div class="feature-row">
           <button class="feat-btn danger nav-btn" data-target="page-account">Account Manager</button>
@@ -100,8 +21,64 @@
         <div class="feature-row">
           <button class="feat-btn danger nav-btn" data-target="page-settings">Settings</button>
         </div>
+      </div>
+    </div>
+
+    <!-- ── SETTINGS PAGE (all feature toggles) ── -->
+    <div id="page-settings" class="page">
+      <div class="page-toolbar">
+        <button class="back-btn" data-target="page-root" title="Back">&#8592;</button>
+        <span class="page-title">Settings</span>
+      </div>
+      <div class="feature-list">
+        <div class="feature-row has-gear">
+          <button class="feat-btn success toggle-btn" data-key="autoAccept">Auto Accept</button>
+          <button class="gear-btn" data-settings="autoAccept" title="Settings">&#9881;</button>
+        </div>
+        <div class="feature-row has-gear">
+          <button class="feat-btn success toggle-btn" data-key="profileModifiers">Profile Modifiers</button>
+          <button class="gear-btn" data-settings="profileModifiers" title="Settings">&#9881;</button>
+        </div>
+        <div class="feature-row has-gear">
+          <button class="feat-btn success toggle-btn" data-key="websiteModifiers">Website Modifiers</button>
+          <button class="gear-btn" data-settings="websiteModifiers" title="Settings">&#9881;</button>
+        </div>
+        <div class="feature-row has-gear">
+          <button class="feat-btn success toggle-btn" data-key="customRoleColors">Custom Role Colors</button>
+          <button class="gear-btn" data-settings="customRoleColors" title="Settings">&#9881;</button>
+        </div>
         <div class="feature-row">
-          <button class="feat-btn danger nav-btn" data-target="page-features">Shared Features</button>
+          <button class="feat-btn success toggle-btn" data-key="stealthStalking">Stealth Stalking</button>
+        </div>
+        <div class="feature-row">
+          <button class="feat-btn success toggle-btn" data-key="trueStatus">True Status</button>
+        </div>
+        <div class="feature-row">
+          <button class="feat-btn success toggle-btn" data-key="acceptRevealer">Accept Revealer</button>
+        </div>
+        <div class="feature-row">
+          <button class="feat-btn success toggle-btn" data-key="teamChatRevealer">Team Chat Revealer</button>
+        </div>
+        <div class="feature-row">
+          <button class="feat-btn success toggle-btn" data-key="teammateRevealer">Teammate Revealer</button>
+        </div>
+        <div class="feature-row has-gear">
+          <button class="feat-btn success toggle-btn" data-key="simpleDiscord">Simple Discord</button>
+          <button class="gear-btn" data-settings="simpleDiscord" title="Settings">&#9881;</button>
+        </div>
+        <div class="feature-row has-gear">
+          <button class="feat-btn danger toggle-btn" data-key="autoVeto">Auto Veto</button>
+          <button class="gear-btn danger" data-settings="autoVeto" title="Settings">&#9881;</button>
+        </div>
+        <div class="feature-row has-gear">
+          <button class="feat-btn success toggle-btn" data-key="userCards">User Cards</button>
+          <button class="gear-btn" data-settings="userCards" title="Settings">&#9881;</button>
+        </div>
+        <div class="feature-row">
+          <button class="feat-btn success toggle-btn" data-key="autoAdventRedeemer">Auto Advent Redeemer</button>
+        </div>
+        <div class="feature-row">
+          <button class="feat-btn success toggle-btn" data-key="adBlocker">Ad Blocker</button>
         </div>
       </div>
     </div>
@@ -112,7 +89,6 @@
         <button class="back-btn" data-target="page-root" title="Back">&#8592;</button>
         <span class="page-title">Account Manager</span>
       </div>
-
       <div class="feature-list">
         <div class="feature-row">
           <button class="feat-btn danger action-btn" data-action="switchAccount">Switch Account</button>
@@ -129,21 +105,16 @@
       </div>
     </div>
 
-    <!-- ── SETTINGS PAGE ── -->
-    <div id="page-settings" class="page">
+    <!-- ── AUTO ACCEPT SETTINGS ── -->
+    <div id="page-autoAccept" class="page">
       <div class="page-toolbar">
-        <button class="back-btn" data-target="page-root" title="Back">&#8592;</button>
-        <span class="page-title">Settings</span>
+        <button class="back-btn" data-target="page-settings" title="Back">&#8592;</button>
+        <span class="page-title">Auto Accept</span>
       </div>
-
       <div class="feature-list settings-list">
         <div class="setting-row">
-          <label>Auto Accept Delay (ms)</label>
+          <label>Accept Delay (ms)</label>
           <input type="number" id="autoAcceptDelay" min="0" max="5000" step="100" value="500" />
-        </div>
-        <div class="setting-row">
-          <label>User Card Delay (ms)</label>
-          <input type="number" id="userCardDelay" min="100" max="3000" step="100" value="400" />
         </div>
         <div class="setting-row">
           <button class="feat-btn danger" id="resetSettings">Reset All Settings</button>
@@ -154,7 +125,7 @@
     <!-- ── PROFILE MODIFIERS PAGE ── -->
     <div id="page-profileModifiers" class="page">
       <div class="page-toolbar">
-        <button class="back-btn" data-target="page-features" title="Back">&#8592;</button>
+        <button class="back-btn" data-target="page-settings" title="Back">&#8592;</button>
         <span class="page-title">Profile Modifiers</span>
       </div>
       <div class="feature-list settings-list">
@@ -168,7 +139,7 @@
     <!-- ── WEBSITE MODIFIERS PAGE ── -->
     <div id="page-websiteModifiers" class="page">
       <div class="page-toolbar">
-        <button class="back-btn" data-target="page-features" title="Back">&#8592;</button>
+        <button class="back-btn" data-target="page-settings" title="Back">&#8592;</button>
         <span class="page-title">Website Modifiers</span>
       </div>
       <div class="feature-list settings-list">
@@ -180,13 +151,17 @@
           <label>Compact Mode</label>
           <input type="checkbox" id="compactMode" />
         </div>
+        <div class="setting-row">
+          <label>Hide Footer</label>
+          <input type="checkbox" id="hideFooter" />
+        </div>
       </div>
     </div>
 
     <!-- ── CUSTOM ROLE COLORS PAGE ── -->
     <div id="page-customRoleColors" class="page">
       <div class="page-toolbar">
-        <button class="back-btn" data-target="page-features" title="Back">&#8592;</button>
+        <button class="back-btn" data-target="page-settings" title="Back">&#8592;</button>
         <span class="page-title">Custom Role Colors</span>
       </div>
       <div class="feature-list settings-list">
@@ -208,7 +183,7 @@
     <!-- ── SIMPLE DISCORD PAGE ── -->
     <div id="page-simpleDiscord" class="page">
       <div class="page-toolbar">
-        <button class="back-btn" data-target="page-features" title="Back">&#8592;</button>
+        <button class="back-btn" data-target="page-settings" title="Back">&#8592;</button>
         <span class="page-title">Simple Discord</span>
       </div>
       <div class="feature-list settings-list">
@@ -216,16 +191,13 @@
           <label>Discord Invite Link</label>
           <input type="url" id="discordInvite" placeholder="https://discord.gg/..." />
         </div>
-        <div class="setting-row">
-          <button class="feat-btn success" id="saveDiscord">Save</button>
-        </div>
       </div>
     </div>
 
     <!-- ── AUTO VETO PAGE ── -->
     <div id="page-autoVeto" class="page">
       <div class="page-toolbar">
-        <button class="back-btn" data-target="page-features" title="Back">&#8592;</button>
+        <button class="back-btn" data-target="page-settings" title="Back">&#8592;</button>
         <span class="page-title">Auto Veto</span>
       </div>
       <div class="feature-list settings-list">
@@ -233,16 +205,13 @@
           <label>Maps to Veto (comma-separated)</label>
           <input type="text" id="vetoMaps" placeholder="e.g. Dust2,Mirage" />
         </div>
-        <div class="setting-row">
-          <button class="feat-btn success" id="saveVeto">Save</button>
-        </div>
       </div>
     </div>
 
     <!-- ── USER CARDS PAGE ── -->
     <div id="page-userCards" class="page">
       <div class="page-toolbar">
-        <button class="back-btn" data-target="page-features" title="Back">&#8592;</button>
+        <button class="back-btn" data-target="page-settings" title="Back">&#8592;</button>
         <span class="page-title">User Cards</span>
       </div>
       <div class="feature-list settings-list">
@@ -257,6 +226,10 @@
         <div class="setting-row">
           <label>Show Win %</label>
           <input type="checkbox" id="showWinPct" checked />
+        </div>
+        <div class="setting-row">
+          <label>Hover Delay (ms)</label>
+          <input type="number" id="userCardDelay" min="100" max="3000" step="100" value="400" />
         </div>
       </div>
     </div>

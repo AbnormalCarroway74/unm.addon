@@ -2,7 +2,6 @@
 
 // ── Defaults ──────────────────────────────────────────────────────────────────
 const DEFAULTS = {
-  powerWatermark:      false,
   autoAccept:          true,
   profileModifiers:    true,
   websiteModifiers:    true,
@@ -22,6 +21,7 @@ const DEFAULTS = {
   customStatusText:    '',
   accentColor:         '#00c853',
   compactMode:         false,
+  hideFooter:          false,
   adminColor:          '#ff4444',
   modColor:            '#ffaa00',
   vipColor:            '#aa44ff',
@@ -100,6 +100,7 @@ function syncSettingsInputs() {
     { id: 'customStatusText', key: 'customStatusText',  type: 'text'   },
     { id: 'accentColor',      key: 'accentColor',       type: 'color'  },
     { id: 'compactMode',      key: 'compactMode',       type: 'check'  },
+    { id: 'hideFooter',       key: 'hideFooter',        type: 'check'  },
     { id: 'adminColor',       key: 'adminColor',        type: 'color'  },
     { id: 'modColor',         key: 'modColor',          type: 'color'  },
     { id: 'vipColor',         key: 'vipColor',          type: 'color'  },

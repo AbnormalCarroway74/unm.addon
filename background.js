@@ -8,7 +8,6 @@ chrome.runtime.onInstalled.addListener(() => {
   chrome.storage.sync.get('unmAddonSettings', (result) => {
     if (!result.unmAddonSettings) {
       const defaults = {
-        powerWatermark:      false,
         autoAccept:          true,
         profileModifiers:    true,
         websiteModifiers:    true,
@@ -26,6 +25,8 @@ chrome.runtime.onInstalled.addListener(() => {
         autoAcceptDelay:     500,
         userCardDelay:       400,
         accentColor:         '#00c853',
+        compactMode:         false,
+        hideFooter:          false,
         vetoMaps:            '',
         showKD:              true,
         showMMR:             true,

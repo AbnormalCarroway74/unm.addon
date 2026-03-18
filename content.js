@@ -2,7 +2,6 @@
 
 // ── Defaults ──────────────────────────────────────────────────────────────────
 const DEFAULTS = {
-  powerWatermark:      false,
   autoAccept:          true,
   profileModifiers:    true,
   websiteModifiers:    true,
@@ -20,10 +19,17 @@ const DEFAULTS = {
   autoAcceptDelay:     500,
   userCardDelay:       400,
   accentColor:         '#00c853',
+  hideFooter:          false,
+  compactMode:         false,
   vetoMaps:            '',
   showKD:              true,
   showMMR:             true,
   showWinPct:          true,
+  discordInvite:       '',
+  adminColor:          '#ff4444',
+  modColor:            '#ffaa00',
+  vipColor:            '#aa44ff',
+  customStatusText:    '',
 };
 
 let settings = { ...DEFAULTS };
@@ -49,6 +55,7 @@ function loadSettings(cb) {
 const PUZZLE_SVG = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="20" height="20"><path d="M20.5 11H19V7a2 2 0 0 0-2-2h-4V3.5a2.5 2.5 0 0 0-5 0V5H4a2 2 0 0 0-2 2v3.8h1.5a2.7 2.7 0 0 1 0 5.4H2V20a2 2 0 0 0 2 2h3.8v-1.5a2.7 2.7 0 0 1 5.4 0V22H17a2 2 0 0 0 2-2v-4h1.5a2.5 2.5 0 0 0 0-5z"/></svg>';
 
 // ── Floating Action Button (bottom-right, godsense style) ─────────────────────
+// Positioned to the LEFT of the unmatched.gg chat bubble icon
 function injectFloatingButton() {
   if ($('#unm-addon-fab')) return;
 
@@ -78,138 +85,163 @@ function buildOverlayMenu() {
   const accentColor = settings.accentColor || '#00c853';
   const vetoMaps = settings.vetoMaps || '';
 
+  // Helper: builds a feature toggle row (with optional gear button)
   const featureRow = (key, label, isDanger, gearPage) => {
     const on = !!settings[key];
     const cls = on ? (isDanger ? 'unm-danger' : 'unm-success') : 'unm-off';
     const gear = gearPage
-      ? `<button class="unm-gear${isDanger ? ' unm-gear-danger' : ''}" data-page="${gearPage}">&#9881;</button>`
+      ? '<button class="unm-gear' + (isDanger ? ' unm-gear-danger' : '') + '" data-page="' + gearPage + '">&#9881;</button>'
       : '';
-    return `<div class="unm-row${gearPage ? ' unm-has-gear' : ''}"><button class="unm-btn ${cls} unm-toggle" data-key="${key}">${label}</button>${gear}</div>`;
+    return '<div class="unm-row' + (gearPage ? ' unm-has-gear' : '') + '">'
+      + '<button class="unm-btn ' + cls + ' unm-toggle" data-key="' + key + '">' + label + '</button>'
+      + gear + '</div>';
   };
 
-  overlay.innerHTML = `
-    <div class="unm-menu" id="unm-menu">
-      <div class="unm-page active" id="unm-page-features">
-        <div class="unm-toolbar">
-          <button class="unm-back" data-target="unm-page-root">&#8592;</button>
-          <span class="unm-title">unm.addon</span>
-        </div>
-        <div class="unm-list">
-          ${featureRow('powerWatermark','Power Watermark',true,null)}
-          ${featureRow('autoAccept','Auto Accept',false,null)}
-          ${featureRow('profileModifiers','Profile Modifiers',false,'unm-page-profile')}
-          ${featureRow('websiteModifiers','Website Modifiers',false,'unm-page-website')}
-          ${featureRow('customRoleColors','Custom Role Colors',false,'unm-page-rolecolors')}
-          ${featureRow('stealthStalking','Stealth Stalking',false,null)}
-          ${featureRow('trueStatus','True Status',false,null)}
-          ${featureRow('acceptRevealer','Accept Revealer',false,null)}
-          ${featureRow('teamChatRevealer','Team Chat Revealer',false,null)}
-          ${featureRow('teammateRevealer','Teammate Revealer',false,null)}
-          ${featureRow('simpleDiscord','Simple Discord',false,'unm-page-discord')}
-          ${featureRow('autoVeto','Auto Veto',true,'unm-page-veto')}
-          ${featureRow('userCards','User Cards',false,'unm-page-usercards')}
-          ${featureRow('autoAdventRedeemer','Auto Advent Redeemer',false,null)}
-          ${featureRow('adBlocker','Ad Blocker',false,null)}
-        </div>
-      </div>
-
-      <div class="unm-page" id="unm-page-root">
-        <div class="unm-toolbar">
-          <button class="unm-back" data-target="unm-page-features">&#8592;</button>
-          <span class="unm-title">unm.addon</span>
-        </div>
-        <div class="unm-list">
-          <div class="unm-row"><button class="unm-btn unm-danger unm-nav" data-target="unm-page-account">Account Manager</button></div>
-          <div class="unm-row"><button class="unm-btn unm-danger unm-nav" data-target="unm-page-features">Shared Features</button></div>
-        </div>
-      </div>
-
-      <div class="unm-page" id="unm-page-account">
-        <div class="unm-toolbar">
-          <button class="unm-back" data-target="unm-page-root">&#8592;</button>
-          <span class="unm-title">Account Manager</span>
-        </div>
-        <div class="unm-list">
-          <div class="unm-row"><button class="unm-btn unm-danger unm-action" data-action="switchAccount">Switch Account</button></div>
-          <div class="unm-row"><button class="unm-btn unm-danger unm-action" data-action="switchSteamAccount">Switch Steam Account</button></div>
-          <div class="unm-row"><button class="unm-btn unm-danger unm-action" data-action="importAccount">Import Account</button></div>
-          <div class="unm-row"><button class="unm-btn unm-danger unm-action" data-action="exportAccount">Export Account</button></div>
-        </div>
-      </div>
-
-      <div class="unm-page" id="unm-page-profile">
-        <div class="unm-toolbar">
-          <button class="unm-back" data-target="unm-page-features">&#8592;</button>
-          <span class="unm-title">Profile Modifiers</span>
-        </div>
-        <div class="unm-list unm-settings">
-          <label>Custom Status Text</label>
-          <input type="text" class="unm-input" id="unm-customStatus" placeholder="e.g. Always Ready" maxlength="50" />
-        </div>
-      </div>
-
-      <div class="unm-page" id="unm-page-website">
-        <div class="unm-toolbar">
-          <button class="unm-back" data-target="unm-page-features">&#8592;</button>
-          <span class="unm-title">Website Modifiers</span>
-        </div>
-        <div class="unm-list unm-settings">
-          <label>Accent Color</label>
-          <input type="color" class="unm-color" id="unm-accentColor" value="${accentColor}" />
-        </div>
-      </div>
-
-      <div class="unm-page" id="unm-page-rolecolors">
-        <div class="unm-toolbar">
-          <button class="unm-back" data-target="unm-page-features">&#8592;</button>
-          <span class="unm-title">Custom Role Colors</span>
-        </div>
-        <div class="unm-list unm-settings">
-          <label>Admin Color</label>
-          <input type="color" class="unm-color" id="unm-adminColor" value="#ff4444" />
-          <label>Moderator Color</label>
-          <input type="color" class="unm-color" id="unm-modColor" value="#ffaa00" />
-          <label>VIP Color</label>
-          <input type="color" class="unm-color" id="unm-vipColor" value="#aa44ff" />
-        </div>
-      </div>
-
-      <div class="unm-page" id="unm-page-veto">
-        <div class="unm-toolbar">
-          <button class="unm-back" data-target="unm-page-features">&#8592;</button>
-          <span class="unm-title">Auto Veto</span>
-        </div>
-        <div class="unm-list unm-settings">
-          <label>Maps to Veto (comma-separated)</label>
-          <input type="text" class="unm-input" id="unm-vetoMaps" placeholder="e.g. Dust2,Mirage" value="${vetoMaps}" />
-        </div>
-      </div>
-
-      <div class="unm-page" id="unm-page-usercards">
-        <div class="unm-toolbar">
-          <button class="unm-back" data-target="unm-page-features">&#8592;</button>
-          <span class="unm-title">User Cards</span>
-        </div>
-        <div class="unm-list unm-settings">
-          <label><input type="checkbox" id="unm-showKD" ${settings.showKD?'checked':''} /> Show K/D</label>
-          <label><input type="checkbox" id="unm-showMMR" ${settings.showMMR?'checked':''} /> Show MMR</label>
-          <label><input type="checkbox" id="unm-showWinPct" ${settings.showWinPct?'checked':''} /> Show Win %</label>
-        </div>
-      </div>
-
-      <div class="unm-page" id="unm-page-discord">
-        <div class="unm-toolbar">
-          <button class="unm-back" data-target="unm-page-features">&#8592;</button>
-          <span class="unm-title">Simple Discord</span>
-        </div>
-        <div class="unm-list unm-settings">
-          <label>Discord Invite URL</label>
-          <input type="url" class="unm-input" id="unm-discordInvite" placeholder="https://discord.gg/..." />
-        </div>
-      </div>
-
-    </div>
-  `;
+  overlay.innerHTML = '\
+    <div class="unm-menu" id="unm-menu">\
+\
+      <!-- ── Root / home page (opens first) ── -->\
+      <div class="unm-page active" id="unm-page-root">\
+        <div class="unm-toolbar">\
+          <span class="unm-title unm-title-brand">unm.addon</span>\
+          <button class="unm-close-btn" id="unm-close-btn" title="Close">&#10005;</button>\
+        </div>\
+        <div class="unm-list">\
+          <div class="unm-row"><button class="unm-btn unm-danger unm-nav" data-target="unm-page-account">Account Manager</button></div>\
+          <div class="unm-row"><button class="unm-btn unm-danger unm-nav" data-target="unm-page-settings">Settings</button></div>\
+        </div>\
+        <div class="unm-version">unm.addon</div>\
+      </div>\
+\
+      <!-- ── Settings page (all feature toggles) ── -->\
+      <div class="unm-page" id="unm-page-settings">\
+        <div class="unm-toolbar">\
+          <button class="unm-back" data-target="unm-page-root">&#8592;</button>\
+          <span class="unm-title">Settings</span>\
+        </div>\
+        <div class="unm-list">'
+          + featureRow('autoAccept',         'Auto Accept',         false, 'unm-page-autoaccept')
+          + featureRow('profileModifiers',   'Profile Modifiers',   false, 'unm-page-profile')
+          + featureRow('websiteModifiers',   'Website Modifiers',   false, 'unm-page-website')
+          + featureRow('customRoleColors',   'Custom Role Colors',  false, 'unm-page-rolecolors')
+          + featureRow('stealthStalking',    'Stealth Stalking',    false, null)
+          + featureRow('trueStatus',         'True Status',         false, null)
+          + featureRow('acceptRevealer',     'Accept Revealer',     false, null)
+          + featureRow('teamChatRevealer',   'Team Chat Revealer',  false, null)
+          + featureRow('teammateRevealer',   'Teammate Revealer',   false, null)
+          + featureRow('simpleDiscord',      'Simple Discord',      false, 'unm-page-discord')
+          + featureRow('autoVeto',           'Auto Veto',           true,  'unm-page-veto')
+          + featureRow('userCards',          'User Cards',          false, 'unm-page-usercards')
+          + featureRow('autoAdventRedeemer', 'Auto Advent Redeemer',false, null)
+          + featureRow('adBlocker',          'Ad Blocker',          false, null)
+        + '</div>\
+      </div>\
+\
+      <!-- ── Account Manager ── -->\
+      <div class="unm-page" id="unm-page-account">\
+        <div class="unm-toolbar">\
+          <button class="unm-back" data-target="unm-page-root">&#8592;</button>\
+          <span class="unm-title">Account Manager</span>\
+        </div>\
+        <div class="unm-list">\
+          <div class="unm-row"><button class="unm-btn unm-danger unm-action" data-action="switchAccount">Switch Account</button></div>\
+          <div class="unm-row"><button class="unm-btn unm-danger unm-action" data-action="switchSteamAccount">Switch Steam Account</button></div>\
+          <div class="unm-row"><button class="unm-btn unm-danger unm-action" data-action="importAccount">Import Account</button></div>\
+          <div class="unm-row"><button class="unm-btn unm-danger unm-action" data-action="exportAccount">Export Account</button></div>\
+        </div>\
+      </div>\
+\
+      <!-- ── Auto Accept settings ── -->\
+      <div class="unm-page" id="unm-page-autoaccept">\
+        <div class="unm-toolbar">\
+          <button class="unm-back" data-target="unm-page-settings">&#8592;</button>\
+          <span class="unm-title">Auto Accept</span>\
+        </div>\
+        <div class="unm-list unm-settings">\
+          <label>Accept Delay (ms)</label>\
+          <input type="number" class="unm-input" id="unm-autoAcceptDelay" min="0" max="5000" step="100" value="' + (settings.autoAcceptDelay || 500) + '" />\
+        </div>\
+      </div>\
+\
+      <!-- ── Profile Modifiers ── -->\
+      <div class="unm-page" id="unm-page-profile">\
+        <div class="unm-toolbar">\
+          <button class="unm-back" data-target="unm-page-settings">&#8592;</button>\
+          <span class="unm-title">Profile Modifiers</span>\
+        </div>\
+        <div class="unm-list unm-settings">\
+          <label>Custom Status Text</label>\
+          <input type="text" class="unm-input" id="unm-customStatus" placeholder="e.g. Always Ready" maxlength="50" value="' + escapeHtml(settings.customStatusText || '') + '" />\
+        </div>\
+      </div>\
+\
+      <!-- ── Website Modifiers ── -->\
+      <div class="unm-page" id="unm-page-website">\
+        <div class="unm-toolbar">\
+          <button class="unm-back" data-target="unm-page-settings">&#8592;</button>\
+          <span class="unm-title">Website Modifiers</span>\
+        </div>\
+        <div class="unm-list unm-settings">\
+          <label>Accent Color <input type="color" class="unm-color" id="unm-accentColor" value="' + accentColor + '" /></label>\
+          <label><input type="checkbox" id="unm-compactMode" ' + (settings.compactMode ? 'checked' : '') + ' /> Compact Mode</label>\
+          <label><input type="checkbox" id="unm-hideFooter" ' + (settings.hideFooter ? 'checked' : '') + ' /> Hide Footer</label>\
+        </div>\
+      </div>\
+\
+      <!-- ── Custom Role Colors ── -->\
+      <div class="unm-page" id="unm-page-rolecolors">\
+        <div class="unm-toolbar">\
+          <button class="unm-back" data-target="unm-page-settings">&#8592;</button>\
+          <span class="unm-title">Custom Role Colors</span>\
+        </div>\
+        <div class="unm-list unm-settings">\
+          <label>Admin <input type="color" class="unm-color" id="unm-adminColor" value="' + (settings.adminColor || '#ff4444') + '" /></label>\
+          <label>Moderator <input type="color" class="unm-color" id="unm-modColor" value="' + (settings.modColor || '#ffaa00') + '" /></label>\
+          <label>VIP <input type="color" class="unm-color" id="unm-vipColor" value="' + (settings.vipColor || '#aa44ff') + '" /></label>\
+        </div>\
+      </div>\
+\
+      <!-- ── Auto Veto ── -->\
+      <div class="unm-page" id="unm-page-veto">\
+        <div class="unm-toolbar">\
+          <button class="unm-back" data-target="unm-page-settings">&#8592;</button>\
+          <span class="unm-title">Auto Veto</span>\
+        </div>\
+        <div class="unm-list unm-settings">\
+          <label>Maps to Veto (comma-separated)</label>\
+          <input type="text" class="unm-input" id="unm-vetoMaps" placeholder="e.g. Dust2,Mirage" value="' + escapeHtml(vetoMaps) + '" />\
+        </div>\
+      </div>\
+\
+      <!-- ── User Cards ── -->\
+      <div class="unm-page" id="unm-page-usercards">\
+        <div class="unm-toolbar">\
+          <button class="unm-back" data-target="unm-page-settings">&#8592;</button>\
+          <span class="unm-title">User Cards</span>\
+        </div>\
+        <div class="unm-list unm-settings">\
+          <label><input type="checkbox" id="unm-showKD" ' + (settings.showKD ? 'checked' : '') + ' /> Show K/D</label>\
+          <label><input type="checkbox" id="unm-showMMR" ' + (settings.showMMR ? 'checked' : '') + ' /> Show MMR</label>\
+          <label><input type="checkbox" id="unm-showWinPct" ' + (settings.showWinPct ? 'checked' : '') + ' /> Show Win %</label>\
+          <label>Hover Delay (ms)</label>\
+          <input type="number" class="unm-input" id="unm-userCardDelay" min="100" max="3000" step="100" value="' + (settings.userCardDelay || 400) + '" />\
+        </div>\
+      </div>\
+\
+      <!-- ── Simple Discord ── -->\
+      <div class="unm-page" id="unm-page-discord">\
+        <div class="unm-toolbar">\
+          <button class="unm-back" data-target="unm-page-settings">&#8592;</button>\
+          <span class="unm-title">Simple Discord</span>\
+        </div>\
+        <div class="unm-list unm-settings">\
+          <label>Discord Invite URL</label>\
+          <input type="url" class="unm-input" id="unm-discordInvite" placeholder="https://discord.gg/..." value="' + escapeHtml(settings.discordInvite || '') + '" />\
+        </div>\
+      </div>\
+\
+    </div>\
+  ';
 
   document.body.appendChild(overlay);
   bindOverlayEvents();
@@ -226,6 +258,7 @@ function buildOverlayMenu() {
 }
 
 function bindOverlayEvents() {
+  // Back buttons
   $$('.unm-back').forEach(btn => {
     btn.addEventListener('click', () => {
       const target = btn.dataset.target;
@@ -233,6 +266,11 @@ function bindOverlayEvents() {
     });
   });
 
+  // Close button
+  const closeBtn = $('#unm-close-btn');
+  if (closeBtn) closeBtn.addEventListener('click', closeOverlayMenu);
+
+  // Navigation buttons
   $$('.unm-nav').forEach(btn => {
     btn.addEventListener('click', () => {
       const target = btn.dataset.target;
@@ -240,6 +278,7 @@ function bindOverlayEvents() {
     });
   });
 
+  // Gear buttons
   $$('.unm-gear').forEach(btn => {
     btn.addEventListener('click', () => {
       const page = btn.dataset.page;
@@ -247,6 +286,7 @@ function bindOverlayEvents() {
     });
   });
 
+  // Toggle buttons
   $$('.unm-toggle').forEach(btn => {
     btn.addEventListener('click', () => {
       const key = btn.dataset.key;
@@ -258,17 +298,53 @@ function bindOverlayEvents() {
     });
   });
 
+  // Action buttons (account manager)
   $$('.unm-action').forEach(btn => {
     btn.addEventListener('click', () => {
       handleAccountAction(btn.dataset.action);
+    });
+  });
+
+  // Number / text / checkbox inputs — persist on change
+  $$('.unm-input, .unm-color, .unm-settings input[type="checkbox"]').forEach(el => {
+    el.addEventListener('change', () => {
+      const key = el.id.replace('unm-', '');
+      // Map element IDs to settings keys
+      const keyMap = {
+        'accentColor':     'accentColor',
+        'autoAcceptDelay': 'autoAcceptDelay',
+        'userCardDelay':   'userCardDelay',
+        'customStatus':    'customStatusText',
+        'vetoMaps':        'vetoMaps',
+        'showKD':          'showKD',
+        'showMMR':         'showMMR',
+        'showWinPct':      'showWinPct',
+        'discordInvite':   'discordInvite',
+        'adminColor':      'adminColor',
+        'modColor':        'modColor',
+        'vipColor':        'vipColor',
+        'compactMode':     'compactMode',
+        'hideFooter':      'hideFooter',
+      };
+      const settingsKey = keyMap[key];
+      if (!settingsKey) return;
+      if (el.type === 'checkbox') {
+        settings[settingsKey] = el.checked;
+      } else if (el.type === 'number') {
+        settings[settingsKey] = parseInt(el.value, 10) || 0;
+      } else {
+        settings[settingsKey] = el.value;
+      }
+      saveOverlaySettings();
+      applyFeatures();
     });
   });
 }
 
 function refreshToggleBtn(btn, key) {
   const enabled = !!settings[key];
-  const isDanger = key === 'powerWatermark' || key === 'autoVeto';
-  btn.className = `unm-btn ${enabled ? (isDanger ? 'unm-danger' : 'unm-success') : 'unm-off'} unm-toggle`;
+  const isDanger = key === 'autoVeto';
+  btn.className = 'unm-btn ' + (enabled ? (isDanger ? 'unm-danger' : 'unm-success') : 'unm-off') + ' unm-toggle';
 }
 
 function overlayShowPage(pageId) {
@@ -286,6 +362,8 @@ function openOverlayMenu() {
   const overlay = $('#unm-addon-overlay');
   const fab = $('#unm-addon-fab');
   if (overlay) {
+    // Always re-open on root page
+    overlayShowPage('unm-page-root');
     overlay.classList.add('visible');
     overlayVisible = true;
     if (fab) fab.classList.add('unm-fab-open');
@@ -319,10 +397,41 @@ let userCardEl = null;
 let userCardTimer = null;
 let activeCardHref = null;
 
+// Get the cleanest display name from an anchor element.
+// Handles: avatar-only anchors (img[alt]), multi-line text (innerText first line),
+// dedicated name child elements, title/aria-label attributes.
+function getAnchorDisplayName(anchor) {
+  // 1. Dedicated username child element (most precise)
+  const nameEl = anchor.querySelector(
+    '[class*="username"], [class*="nickname"], [class*="display-name"], ' +
+    '[class*="player-name"], [class*="user-name"], [class*="visitor-name"]'
+  );
+  if (nameEl) {
+    const t = (nameEl.innerText || nameEl.textContent || '').trim();
+    if (t) return t;
+  }
+
+  // 2. First non-empty line of innerText (avoids multi-child concatenation)
+  const lines = (anchor.innerText || '').trim().split('\n').map(l => l.trim()).filter(Boolean);
+  if (lines.length > 0) return lines[0];
+
+  // 3. Image alt attribute (for avatar-only links)
+  const img = anchor.querySelector('img[alt]');
+  if (img && img.alt.trim()) return img.alt.trim();
+
+  // 4. Title or aria-label on the anchor itself
+  if (anchor.title && anchor.title.trim()) return anchor.title.trim();
+  const al = anchor.getAttribute('aria-label');
+  if (al && al.trim()) return al.trim();
+
+  return '';
+}
+
 async function fetchPlayerStats(username) {
+  // unmatched.gg API endpoints — username may be a numeric ID
   const endpoints = [
-    `/api/v1/users/${encodeURIComponent(username)}`,
-    `/api/users/${encodeURIComponent(username)}`,
+    '/api/v1/users/' + encodeURIComponent(username),
+    '/api/users/' + encodeURIComponent(username),
   ];
 
   for (const ep of endpoints) {
@@ -338,32 +447,40 @@ async function fetchPlayerStats(username) {
 }
 
 function buildUserCard(data, anchor) {
-  // Use visible link text as the display name — avoids showing numeric IDs from URLs
-  const displayName = anchor.textContent.trim() || '';
-  const name    = data?.username   || data?.name   || data?.user?.username || displayName;
-  const rank    = data?.rank       || data?.user?.rank    || '';
-  const status  = data?.status     || data?.user?.status  || 'Free';
-  const avatar  = data?.avatar     || data?.user?.avatar  || data?.profileImage || '';
-  const kd      = data?.stats?.kd  || data?.kd     || null;
-  const mmr     = data?.stats?.mmr || data?.mmr    || null;
-  const matches = data?.stats?.matches || data?.matches || null;
-  const winPct  = data?.stats?.winRate || data?.winPct  || null;
-  const game    = data?.stats?.game    || 'CS:GO';
-  const mode    = data?.stats?.mode    || '2v2';
+  const displayName = getAnchorDisplayName(anchor);
+  // Widen the field search to match various API shapes unmatched.gg might return
+  const name   = data?.username || data?.display_name || data?.displayName ||
+                 data?.name || data?.user?.username || data?.user?.display_name ||
+                 data?.player?.username || displayName;
+  const rank   = data?.rank       || data?.user?.rank    || '';
+  const status = data?.status     || data?.user?.status  || 'Free';
+  const avatar = data?.avatar     || data?.user?.avatar  || data?.profileImage || data?.avatar_url || '';
+  const kd     = data?.stats?.kd  || data?.kd     || null;
+  const mmr    = data?.stats?.mmr || data?.mmr    || null;
+  const matches= data?.stats?.matches || data?.matches || null;
+  const winPct = data?.stats?.winRate || data?.stats?.win_rate || data?.winPct || null;
+  const game   = data?.stats?.game    || 'CS:GO';
+  const mode   = data?.stats?.mode    || '2v2';
 
   const card = document.createElement('div');
   card.className = 'unm-user-card';
 
   const avatarHtml = avatar
-    ? '<img class="unm-card-avatar" src="' + avatar + '" alt="" />'
+    ? '<img class="unm-card-avatar" src="' + escapeHtml(avatar) + '" alt="" />'
     : '<div class="unm-card-avatar-placeholder">?</div>';
 
-  const rankHtml = rank ? ' <span class="unm-card-rank">#' + escapeHtml(String(rank)) + '</span>' : '';
+  const rankHtml = rank
+    ? ' <span class="unm-card-rank">#' + escapeHtml(String(rank)) + '</span>'
+    : '';
 
   const statsHtml = (kd !== null || mmr !== null) ? (
     '<div class="unm-card-stats-row">' +
-    (settings.showKD && kd !== null ? '<div class="unm-card-stat"><span class="unm-stat-label">K/D</span><span class="unm-stat-val">~' + parseFloat(kd).toFixed(2) + '</span></div>' : '') +
-    (settings.showMMR && mmr !== null ? '<div class="unm-card-stat"><span class="unm-stat-label">MMR</span><span class="unm-stat-val">~' + escapeHtml(String(mmr)) + '</span></div>' : '') +
+    (settings.showKD && kd !== null
+      ? '<div class="unm-card-stat"><span class="unm-stat-label">K/D</span><span class="unm-stat-val">~' + parseFloat(kd).toFixed(2) + '</span></div>'
+      : '') +
+    (settings.showMMR && mmr !== null
+      ? '<div class="unm-card-stat"><span class="unm-stat-label">MMR</span><span class="unm-stat-val">~' + escapeHtml(String(mmr)) + '</span></div>'
+      : '') +
     '</div>'
   ) : '';
 
@@ -374,8 +491,7 @@ function buildUserCard(data, anchor) {
   const gameHtml = matches !== null ? (
     '<div class="unm-card-game-section">' +
     '<div class="unm-card-game-label">' + escapeHtml(String(game)) + '</div>' +
-    '<div class="unm-card-game-row">' +
-    '<span class="unm-card-mode">' + escapeHtml(String(mode)) + '</span>' +
+    '<div class="unm-card-game-row"><span class="unm-card-mode">' + escapeHtml(String(mode)) + '</span>' +
     '<div class="unm-card-game-stats"><span class="unm-stat-label">Matches</span> <strong>' + escapeHtml(String(matches)) + '</strong>' + winPctHtml + '</div>' +
     '</div></div>'
   ) : '';
@@ -418,8 +534,8 @@ async function showUserCardFor(anchor) {
   const username = extractUsername(href);
   if (!username) return;
 
-  // Use the link's visible text as the display name — avoids showing numeric IDs from the URL
-  const displayName = anchor.textContent.trim() || username;
+  // displayName uses the anchor's visible text (not the URL segment)
+  const displayName = getAnchorDisplayName(anchor) || username;
 
   const placeholder = document.createElement('div');
   placeholder.className = 'unm-user-card unm-card-loading';
@@ -467,11 +583,7 @@ function extractUsername(href) {
   for (const p of patterns) {
     const m = href.match(p);
     if (m) {
-      try {
-        return decodeURIComponent(m[1]);
-      } catch (_) {
-        return m[1];
-      }
+      try { return decodeURIComponent(m[1]); } catch (_) { return m[1]; }
     }
   }
   return null;
@@ -489,9 +601,7 @@ function initUserCards() {
     const a = e.target.closest('a[href]');
     if (!a || !extractUsername(a.href)) return;
     clearTimeout(userCardTimer);
-    setTimeout(() => {
-      if (userCardEl && !userCardEl.matches(':hover')) removeUserCard();
-    }, 200);
+    setTimeout(() => { if (userCardEl && !userCardEl.matches(':hover')) removeUserCard(); }, 200);
   });
 
   document.addEventListener('mouseover', (e) => {
@@ -523,9 +633,7 @@ const autoAcceptObserver = new MutationObserver(debounce(() => {
     const btn = $(sel);
     if (btn && !btn.dataset.unmAutoClicked) {
       btn.dataset.unmAutoClicked = '1';
-      setTimeout(() => {
-        if (btn.offsetParent !== null) btn.click();
-      }, settings.autoAcceptDelay || 500);
+      setTimeout(() => { if (btn.offsetParent !== null) btn.click(); }, settings.autoAcceptDelay || 500);
       break;
     }
   }
@@ -563,22 +671,18 @@ function initTeamChatRevealer() {
 }
 
 // ── Teammate Revealer ─────────────────────────────────────────────────────────
-// Labels players in lobbies/match screens as "Teammate" (queued together) or "Random"
 function initTeammateRevealer() {
   const observer = new MutationObserver(debounce(runTeammateRevealer, 400));
-  // Only watch for new child nodes — attribute/text changes are not relevant here
   observer.observe(document.body, { childList: true, subtree: true, attributes: false, characterData: false });
   runTeammateRevealer();
 }
 
 function runTeammateRevealer() {
   if (!settings.teammateRevealer) {
-    // Remove existing labels when feature is toggled off
     $$('.unm-party-label').forEach(el => el.remove());
     return;
   }
 
-  // Common selectors for player entries in lobby / queue / match screens
   const containerSelectors = [
     '[class*="lobby-player"]',
     '[class*="queue-player"]',
@@ -591,9 +695,8 @@ function runTeammateRevealer() {
 
   containerSelectors.forEach(sel => {
     $$(sel).forEach(playerEl => {
-      if (playerEl.querySelector('.unm-party-label')) return; // already labelled
+      if (playerEl.querySelector('.unm-party-label')) return;
 
-      // Detect party/squad membership via data attributes or CSS classes the site may use
       const isTeammate =
         playerEl.dataset.party !== undefined ||
         playerEl.dataset.squad !== undefined ||
@@ -602,8 +705,7 @@ function runTeammateRevealer() {
         playerEl.classList.contains('squad') ||
         playerEl.classList.contains('grouped') ||
         playerEl.querySelector('[class*="party-icon"]') !== null ||
-        playerEl.querySelector('[class*="squad-icon"]') !== null ||
-        playerEl.querySelector('[class*="grouped"]') !== null;
+        playerEl.querySelector('[class*="squad-icon"]') !== null;
 
       const label = document.createElement('span');
       label.className = isTeammate
@@ -617,23 +719,15 @@ function runTeammateRevealer() {
 
 // ── Ad Blocker ────────────────────────────────────────────────────────────────
 const AD_SELECTORS = [
-  '[class*="advertisement"]',
-  '[class*="ad-banner"]',
-  '[class*="ad-container"]',
-  '[class*="ad-wrapper"]',
-  '[id*="google_ads"]',
-  'ins.adsbygoogle',
-  '[class*="sidebar-ad"]',
-  '[class*="leaderboard-ad"]',
-  'iframe[src*="doubleclick"]',
-  'iframe[src*="googlesyndication"]',
+  '[class*="advertisement"]', '[class*="ad-banner"]', '[class*="ad-container"]',
+  '[class*="ad-wrapper"]', '[id*="google_ads"]', 'ins.adsbygoogle',
+  '[class*="sidebar-ad"]', '[class*="leaderboard-ad"]',
+  'iframe[src*="doubleclick"]', 'iframe[src*="googlesyndication"]',
 ];
 
 function removeAds() {
   if (!settings.adBlocker) return;
-  AD_SELECTORS.forEach(sel => {
-    $$(sel).forEach(el => { el.style.display = 'none'; });
-  });
+  AD_SELECTORS.forEach(sel => { $$(sel).forEach(el => { el.style.display = 'none'; }); });
 }
 
 const adObserver = new MutationObserver(debounce(removeAds, 200));
@@ -643,19 +737,69 @@ function initAdBlocker() {
   adObserver.observe(document.body, { childList: true, subtree: true });
 }
 
-// ── Power Watermark ───────────────────────────────────────────────────────────
-function applyPowerWatermark() {
-  let wm = $('#unm-watermark');
-  if (settings.powerWatermark) {
-    if (!wm) {
-      wm = document.createElement('div');
-      wm.id = 'unm-watermark';
-      wm.className = 'unm-watermark';
-      wm.textContent = 'unm.addon';
-      document.body.appendChild(wm);
-    }
-  } else {
-    if (wm) wm.remove();
+// ── Stealth Stalking ──────────────────────────────────────────────────────────
+// Prevents the site from logging your profile view by intercepting both
+// fetch() and XMLHttpRequest requests that match profile-tracking URL patterns.
+let _stealthOrigFetch    = null;
+let _stealthOrigXHROpen  = null;
+let _stealthOrigXHRSend  = null;
+let _stealthActive       = false;
+
+const _STEALTH_PATTERNS = [
+  '/profile/view', '/profile-view', '/viewed', '/visit',
+  'visitor', 'view_profile', 'profile_view', '/track', '/analytics',
+];
+
+function _stealthUrlBlocked(url) {
+  if (!url || typeof url !== 'string') return false;
+  const lower = url.toLowerCase();
+  return _STEALTH_PATTERNS.some(p => lower.includes(p));
+}
+
+function initStealthStalking() {
+  if (settings.stealthStalking && !_stealthActive) {
+    _stealthOrigFetch    = window.fetch;
+    _stealthOrigXHROpen  = XMLHttpRequest.prototype.open;
+    _stealthOrigXHRSend  = XMLHttpRequest.prototype.send;
+    _stealthActive = true;
+
+    // Intercept fetch
+    window.fetch = function(resource, init) {
+      const url = typeof resource === 'string' ? resource
+        : (resource instanceof Request ? resource.url : String(resource || ''));
+      if (_stealthUrlBlocked(url)) {
+        return Promise.resolve(new Response('{}', {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        }));
+      }
+      return _stealthOrigFetch.apply(this, arguments);
+    };
+
+    // Intercept XMLHttpRequest — mark blocked XHRs in open(), silently drop in send()
+    const origOpen = _stealthOrigXHROpen;
+    XMLHttpRequest.prototype.open = function(method, url, ...rest) {
+      if (_stealthUrlBlocked(String(url || ''))) {
+        this._unmStealthBlocked = true;
+        return; // Leave XHR in UNSENT state — send() will be a no-op
+      }
+      return origOpen.call(this, method, url, ...rest);
+    };
+
+    const origSend = _stealthOrigXHRSend;
+    XMLHttpRequest.prototype.send = function(...args) {
+      if (this._unmStealthBlocked) return; // Silently discard the blocked request
+      return origSend.apply(this, args);
+    };
+
+  } else if (!settings.stealthStalking && _stealthActive) {
+    if (_stealthOrigFetch)   window.fetch = _stealthOrigFetch;
+    if (_stealthOrigXHROpen) XMLHttpRequest.prototype.open = _stealthOrigXHROpen;
+    if (_stealthOrigXHRSend) XMLHttpRequest.prototype.send = _stealthOrigXHRSend;
+    _stealthOrigFetch   = null;
+    _stealthOrigXHROpen = null;
+    _stealthOrigXHRSend = null;
+    _stealthActive = false;
   }
 }
 
@@ -663,19 +807,14 @@ function applyPowerWatermark() {
 function initAutoAdventRedeemer() {
   const observer = new MutationObserver(debounce(() => {
     if (!settings.autoAdventRedeemer) return;
-    const redeemSelectors = [
-      'button[class*="advent"]',
-      'button[class*="redeem"]',
-      '.advent-calendar button',
-    ];
-    for (const sel of redeemSelectors) {
+    ['button[class*="advent"]', 'button[class*="redeem"]', '.advent-calendar button'].forEach(sel => {
       $$(sel).forEach(btn => {
         if (!btn.dataset.unmRedeemed) {
           btn.dataset.unmRedeemed = '1';
           setTimeout(() => { if (btn.offsetParent !== null) btn.click(); }, 1000);
         }
       });
-    }
+    });
   }, 500));
   observer.observe(document.body, { childList: true, subtree: true });
 }
@@ -700,37 +839,35 @@ function initAutoVeto() {
   observer.observe(document.body, { childList: true, subtree: true });
 }
 
-// ── Stealth Stalking ──────────────────────────────────────────────────────────
-let _stealthOrigFetch = null;
-let _stealthActive = false;
-
-function initStealthStalking() {
-  if (settings.stealthStalking && !_stealthActive) {
-    _stealthOrigFetch = window.fetch;
-    _stealthActive = true;
-    window.fetch = function(resource, init) {
-      const url = typeof resource === 'string' ? resource : (resource && resource.url) || '';
-      if (url.includes('/profile/view') || url.includes('/viewed')) {
-        return Promise.resolve(new Response('{}', { status: 200 }));
-      }
-      return _stealthOrigFetch.apply(this, arguments);
-    };
-  } else if (!settings.stealthStalking && _stealthActive) {
-    if (_stealthOrigFetch) window.fetch = _stealthOrigFetch;
-    _stealthOrigFetch = null;
-    _stealthActive = false;
+// ── Website Modifier — apply accent color / compact / hide-footer ─────────────
+function applyWebsiteModifiers() {
+  let styleEl = document.getElementById('unm-website-modifiers-style');
+  if (!styleEl) {
+    styleEl = document.createElement('style');
+    styleEl.id = 'unm-website-modifiers-style';
+    document.head.appendChild(styleEl);
   }
+  const rules = [];
+  if (settings.websiteModifiers) {
+    if (settings.accentColor) {
+      rules.push(':root { --unm-accent: ' + settings.accentColor + '; }');
+    }
+    if (settings.compactMode) {
+      rules.push('body { font-size: 13px; line-height: 1.3; }');
+      rules.push('p, li, td, th { line-height: 1.35; }');
+    }
+    if (settings.hideFooter) {
+      rules.push('footer, [class*="footer"] { display: none !important; }');
+    }
+  }
+  styleEl.textContent = rules.join('\n');
 }
 
 // ── Account Actions ───────────────────────────────────────────────────────────
 function handleAccountAction(action) {
   switch (action) {
-    case 'switchAccount':
-      window.location.href = '/login';
-      break;
-    case 'switchSteamAccount':
-      window.location.href = '/auth/steam';
-      break;
+    case 'switchAccount':       window.location.href = '/login'; break;
+    case 'switchSteamAccount':  window.location.href = '/auth/steam'; break;
     case 'importAccount': {
       const input = document.createElement('input');
       input.type = 'file';
@@ -771,8 +908,8 @@ function handleAccountAction(action) {
 
 // ── Apply All Features ────────────────────────────────────────────────────────
 function applyFeatures() {
-  applyPowerWatermark();
   removeAds();
+  applyWebsiteModifiers();
 }
 
 // ── Save Settings ─────────────────────────────────────────────────────────────
@@ -785,6 +922,7 @@ chrome.runtime.onMessage.addListener((msg) => {
   if (msg.type === 'settingsUpdate') {
     settings = { ...DEFAULTS, ...msg.settings };
     applyFeatures();
+    initStealthStalking();
   }
   if (msg.type === 'accountAction') {
     handleAccountAction(msg.action);
@@ -805,10 +943,10 @@ function escapeHtml(str) {
 // ── Boot ──────────────────────────────────────────────────────────────────────
 function boot() {
   loadSettings(() => {
-    // Inject floating action button in the bottom-right corner (godsense style)
+    // Inject FAB to the left of the chat bubble icon
     injectFloatingButton();
 
-    // Re-inject the FAB if SPA navigation removes it
+    // Re-inject if SPA navigation removes it
     const fabObserver = new MutationObserver(debounce(() => {
       if (!$('#unm-addon-fab')) injectFloatingButton();
     }, 600));
@@ -826,10 +964,9 @@ function boot() {
     initStealthStalking();
     applyFeatures();
 
-    // Session welcome banner
     if (!sessionStorage.getItem('unm-addon-booted')) {
       sessionStorage.setItem('unm-addon-booted', '1');
-      showNotificationBanner('Active \u2014 click the puzzle-piece button in the bottom-right corner to manage features.');
+      showNotificationBanner('Active \u2014 click the puzzle-piece button (bottom-right, left of chat) to manage features.');
     }
   });
 }
