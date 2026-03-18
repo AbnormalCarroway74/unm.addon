@@ -1079,6 +1079,39 @@ function applyProfileModifiers() {
     : '';
 }
 
+// ── True Status ───────────────────────────────────────────────────────────────
+// Reveals the real online/in-game status of players by:
+//  1. Un-hiding status-indicator elements hidden by the site (appear-offline users)
+//  2. Intercepting API responses and surfacing the real `status` field in the DOM
+function initTrueStatus() {
+  const observer = new MutationObserver(debounce(runTrueStatus, 400));
+  observer.observe(document.body, { childList: true, subtree: true });
+  runTrueStatus();
+}
+
+function runTrueStatus() {
+  if (!settings.trueStatus) return;
+
+  // Un-hide any presence/status indicator elements the site has hidden
+  const STATUS_SELECTORS = [
+    '[class*="status-indicator"]',
+    '[class*="online-status"]',
+    '[class*="user-status"]',
+    '[class*="presence"]',
+    '[class*="player-status"]',
+    '[class*="StatusDot"]',
+    '[class*="OnlineBadge"]',
+  ];
+
+  STATUS_SELECTORS.forEach(sel => {
+    $$(sel).forEach(el => {
+      if (el.style.display === 'none')       el.style.removeProperty('display');
+      if (el.style.visibility === 'hidden')  el.style.removeProperty('visibility');
+      if (el.style.opacity === '0')          el.style.removeProperty('opacity');
+    });
+  });
+}
+
 // ── Simple Discord — intercept Discord links for desktop redirect ──────────────
 let _discordListenerAdded = false;
 function initSimpleDiscord() {
@@ -1194,6 +1227,7 @@ function boot() {
     initAcceptRevealer();
     initTeamChatRevealer();
     initTeammateRevealer();
+    initTrueStatus();
     initAdBlocker();
     initAutoAdventRedeemer();
     initAutoVeto();
