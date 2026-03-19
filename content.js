@@ -527,6 +527,45 @@ async function fetchPlayerStatsFromPage(username) {
   } catch (_) { return null; }
 }
 
+// Extract an avatar image URL from the DOM near an anchor element.
+// Looks inside the anchor first, then walks up to parent container rows.
+// Returns the first usable `src` found, or '' if nothing is found.
+// Minimum pixel dimension below which an image is considered an icon, not an avatar.
+const _AVATAR_MIN_PX = 20;
+// How many DOM ancestor levels to walk when searching for a nearby avatar image.
+const _AVATAR_DOM_DEPTH = 4;
+
+function getAnchorAvatarFromDOM(anchor) {
+  // Helper: is this <img> likely an avatar (not a tiny icon/logo)?
+  const isAvatarImg = (img) => {
+    if (!img || !img.src) return false;
+    // Skip data URIs (usually icons) and SVGs
+    if (img.src.startsWith('data:image/svg') || img.src.endsWith('.svg')) return false;
+    // Skip very small images (icons tend to be < _AVATAR_MIN_PX in DOM)
+    const w = img.naturalWidth || img.width || img.offsetWidth || 0;
+    const h = img.naturalHeight || img.height || img.offsetHeight || 0;
+    if (w > 0 && w < _AVATAR_MIN_PX && h > 0 && h < _AVATAR_MIN_PX) return false;
+    return true;
+  };
+
+  // 1. img directly inside the anchor
+  const imgInAnchor = anchor.querySelector('img');
+  if (imgInAnchor && isAvatarImg(imgInAnchor)) return imgInAnchor.src;
+
+  // 2. Walk up the DOM tree looking for an avatar image in a sibling/parent container
+  let node = anchor.parentElement;
+  for (let i = 0; i < _AVATAR_DOM_DEPTH && node; i++, node = node.parentElement) {
+    const imgs = node.querySelectorAll('img');
+    for (const img of imgs) {
+      if (img !== imgInAnchor && isAvatarImg(img)) return img.src;
+    }
+    // Stop at the document body
+    if (node === document.body) break;
+  }
+
+  return '';
+}
+
 function buildUserCard(data, anchor) {
   const displayName = getAnchorDisplayName(anchor);
 
@@ -538,8 +577,21 @@ function buildUserCard(data, anchor) {
   const userId = u?.id ?? data?.id ?? null;
   const status = u?.premium ? 'Premium'
                : (u?.tier || u?.status || data?.tier || data?.status || 'Free');
-  const avatar = u?.avatar || u?.avatarUrl || u?.avatar_url || u?.profileImage ||
-                 data?.avatar || data?.avatar_url || '';
+
+  // Avatar: try DOM first (most reliable — image is already rendered on page),
+  // then fall back through many API field name variants (direct, Steam, etc.).
+  const domAvatar = getAnchorAvatarFromDOM(anchor);
+  const avatar = domAvatar
+    || u?.avatar || u?.avatarUrl || u?.avatar_url
+    || u?.profileImage || u?.profilePicture || u?.profilePhoto
+    || u?.picture || u?.photo || u?.image || u?.imageUrl || u?.photoUrl
+    || u?.thumbnailUrl || u?.thumbnail
+    || u?.steamAvatar || u?.steam_avatar || u?.steamAvatarUrl || u?.steam_avatar_url
+    || u?.avatarmedium || u?.avatarMedium || u?.avatarfull || u?.avatarFull
+    || data?.avatar || data?.avatar_url || data?.avatarUrl
+    || data?.profileImage || data?.profilePicture || data?.picture
+    || data?.steamAvatar || data?.steam_avatar || data?.avatarmedium || data?.avatarfull
+    || '';
 
   // Stats may come from a games array (Next.js scraped structure) or direct stats
   let kd = null, mmr = null, matches = null, winPct = null, game = 'CS:GO', mode = '2v2';
@@ -665,10 +717,14 @@ async function showUserCardFor(anchor) {
 
   placeholder.remove();
   if (!data) {
+    const domAvatar = getAnchorAvatarFromDOM(anchor);
     const fallback = document.createElement('div');
     fallback.className = 'unm-user-card';
     fallback.innerHTML =
-      '<div class="unm-card-header"><div class="unm-card-avatar-placeholder">?</div>' +
+      '<div class="unm-card-header">' +
+      (domAvatar
+        ? '<img class="unm-card-avatar" src="' + escapeHtml(domAvatar) + '" alt="" />'
+        : '<div class="unm-card-avatar-placeholder">?</div>') +
       '<div class="unm-card-info"><div class="unm-card-name">' + escapeHtml(displayName) + '</div>' +
       '<div class="unm-card-status">Free</div></div></div>';
     document.body.appendChild(fallback);
