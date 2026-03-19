@@ -502,8 +502,28 @@ async function fetchPlayerStatsFromPage(username) {
     const pp = nextData?.props?.pageProps;
     if (!pp) return null;
 
-    // Try multiple paths for user data in Next.js pageProps
-    return pp.user || pp.userData || pp.data?.user || pp.profile || pp.data || null;
+    // Try multiple paths for user data in Next.js pageProps,
+    // covering direct props, nested data objects, and React Query / TanStack Query
+    // dehydrated state (common in Next.js + React Query apps).
+    const candidates = [
+      pp.user,
+      pp.userData,
+      pp.profile,
+      pp.data?.user,
+      pp.data?.profile,
+      pp.data,
+      pp.initialData?.user,
+      pp.initialData,
+      pp.initialProps?.user,
+      // React Query / TanStack Query dehydrated state
+      pp.dehydratedState?.queries?.[0]?.state?.data?.user,
+      pp.dehydratedState?.queries?.[0]?.state?.data?.profile,
+      pp.dehydratedState?.queries?.[0]?.state?.data,
+    ];
+    for (const c of candidates) {
+      if (c && typeof c === 'object' && !Array.isArray(c)) return c;
+    }
+    return null;
   } catch (_) { return null; }
 }
 
@@ -670,9 +690,10 @@ function removeUserCard() {
 
 function extractUsername(href) {
   if (!href) return null;
+  // unmatched.gg uses /user/{id} (singular) as the primary profile URL pattern.
   const patterns = [
-    /\/users\/([^/?#]+)/,    // unmatched.gg primary pattern
     /\/user\/([^/?#]+)/,
+    /\/users\/([^/?#]+)/,
     /\/profile\/([^/?#]+)/,
     /\/players\/([^/?#]+)/,
     /\/u\/([^/?#]+)/,
@@ -1084,15 +1105,23 @@ function applyProfileModifiers() {
 //  1. Un-hiding status-indicator elements hidden by the site (appear-offline users)
 //  2. Intercepting API responses and surfacing the real `status` field in the DOM
 function initTrueStatus() {
+  // Watch for both child-list changes (new elements added) and
+  // attribute changes (e.g. class swaps that toggle visibility).
   const observer = new MutationObserver(debounce(runTrueStatus, 400));
-  observer.observe(document.body, { childList: true, subtree: true });
+  observer.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['style', 'class'] });
   runTrueStatus();
 }
 
 function runTrueStatus() {
-  if (!settings.trueStatus) return;
+  if (!settings.trueStatus) {
+    const s = document.getElementById('unm-true-status-style');
+    if (s) s.textContent = '';
+    return;
+  }
 
-  // Un-hide any presence/status indicator elements the site has hidden
+  // Un-hide any presence/status indicator elements the site has hidden.
+  // Covers both inline-style hiding AND CSS-class-based hiding via a
+  // persistent <style> override injected into <head>.
   const STATUS_SELECTORS = [
     '[class*="status-indicator"]',
     '[class*="online-status"]',
@@ -1101,8 +1130,21 @@ function runTrueStatus() {
     '[class*="player-status"]',
     '[class*="StatusDot"]',
     '[class*="OnlineBadge"]',
+    '[class*="online-badge"]',
+    '[class*="status-dot"]',
   ];
 
+  // 1. CSS override — forces visibility regardless of class-based hiding.
+  let styleEl = document.getElementById('unm-true-status-style');
+  if (!styleEl) {
+    styleEl = document.createElement('style');
+    styleEl.id = 'unm-true-status-style';
+    document.head.appendChild(styleEl);
+  }
+  styleEl.textContent = STATUS_SELECTORS.join(', ') +
+    ' { display: revert !important; visibility: visible !important; opacity: 1 !important; }';
+
+  // 2. Inline-style override — removes any explicit style="" hiding.
   STATUS_SELECTORS.forEach(sel => {
     $$(sel).forEach(el => {
       if (el.style.display === 'none')       el.style.removeProperty('display');
@@ -1179,6 +1221,7 @@ function applyFeatures() {
   removeAds();
   applyWebsiteModifiers();
   applyProfileModifiers();
+  runTrueStatus();
 }
 
 // ── Save Settings ─────────────────────────────────────────────────────────────
