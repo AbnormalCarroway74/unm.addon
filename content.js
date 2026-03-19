@@ -466,29 +466,28 @@ function getAnchorDisplayName(anchor) {
 }
 
 // Returns true if a data object contains at least one recognisable player stat.
+// The real unmatched.gg API returns { user: {...}, stats: [{matchCount, winRate, eloProgression,...},...] }
 function _hasStats(d) {
   if (!d || typeof d !== 'object') return false;
-  return d.elo !== undefined || d.kd !== undefined || d.kd_ratio !== undefined ||
-         d.matches !== undefined || d.total_matches !== undefined ||
-         d.winRate !== undefined || d.win_rate !== undefined || d.wr !== undefined ||
-         d.stats || d.game_stats || (Array.isArray(d.games) && d.games.length > 0);
+  // Real API: data.stats is an array of gamemode stat objects
+  if (Array.isArray(d.stats) && d.stats.length > 0) return true;
+  return d.elo !== undefined || d.kd !== undefined ||
+         d.matches !== undefined || d.matchCount !== undefined ||
+         d.winRate !== undefined || d.win_rate !== undefined ||
+         d.game_stats || (Array.isArray(d.games) && d.games.length > 0);
 }
 
-async function fetchPlayerStats(username) {
-  // Try REST API endpoints first — only accept responses that actually contain stats.
-  // If the endpoint responds with only basic user info (no stats), fall through so
-  // fetchPlayerStatsFromPage (which pulls from __NEXT_DATA__) can be attempted.
+async function fetchPlayerStats(userId) {
+  // The real unmatched.gg endpoint is /api/user/{userId} (numeric ID).
+  // Profile URLs are /user/{userId}, so extractUsername() already gives us the numeric ID.
+  // Try the confirmed real endpoint first, then fall back to legacy guesses.
   const apiEndpoints = [
-    '/api/v1/users/' + encodeURIComponent(username),
-    '/api/users/' + encodeURIComponent(username),
-    '/api/v2/users/' + encodeURIComponent(username),
-    '/api/v1/profile/' + encodeURIComponent(username),
-    '/api/profile/' + encodeURIComponent(username),
-    '/api/player/' + encodeURIComponent(username),
-    '/api/players/' + encodeURIComponent(username),
+    '/api/user/' + encodeURIComponent(userId),
+    '/api/v1/users/' + encodeURIComponent(userId),
+    '/api/users/' + encodeURIComponent(userId),
   ];
 
-  let basicData = null; // data with username/id but no stats
+  let basicData = null;
 
   for (const ep of apiEndpoints) {
     try {
@@ -497,21 +496,18 @@ async function fetchPlayerStats(username) {
       const data = await res.json();
       if (!data) continue;
 
-      const root = data.user || data;
-      if (_hasStats(root) || _hasStats(data.stats)) {
-        // Full stats available — use it immediately.
+      if (_hasStats(data) || _hasStats(data.user)) {
         return data;
       }
-      // Has user identity but no stats — keep as fallback.
-      if (!basicData && (root.username || root.id || root.name)) basicData = data;
+      const root = data.user || data;
+      if (!basicData && (root.username || root.id || root.userId || root.name)) basicData = data;
     } catch (_) { /* try next */ }
   }
 
-  // Try page scraping (most reliable for Next.js SSR apps).
-  const pageData = await fetchPlayerStatsFromPage(username);
+  // Fallback: page scrape
+  const pageData = await fetchPlayerStatsFromPage(userId);
   if (pageData) return pageData;
 
-  // Last resort: basic identity data (no stats) is better than nothing.
   return basicData || null;
 }
 
@@ -612,62 +608,53 @@ function getAnchorAvatarFromDOM(anchor) {
 }
 
 function buildUserCard(data, anchor) {
+  if (!data) return null;
   const displayName = getAnchorDisplayName(anchor);
 
-  // Unwrap user root — Next.js pageProps may nest under 'user'
-  const u = data?.user || data;
+  // Real API: { user: {...}, stats: [...], ... }
+  const u = data.user || data;
 
-  const name   = u?.username || u?.name || u?.displayName || u?.display_name ||
-                 data?.username || data?.name || displayName;
-  const userId = u?.id ?? data?.id ?? null;
-  const status = u?.premium ? 'Premium'
-               : (u?.tier || u?.status || data?.tier || data?.status || 'Free');
+  const name   = u.username || u.name || u.displayName || displayName;
+  if (!name) return null;
 
-  // Avatar: try DOM first (most reliable — image is already rendered on page),
-  // then fall back through many API field name variants (direct, Steam, etc.).
+  // userId comes from data.user.userId in the real API
+  const userId = u.userId ?? u.id ?? null;
+
+  // isOnline and title come from data.user directly
+  const isOnline = u.isOnline || u.online || false;
+  const title    = u.title || (isOnline ? 'Online' : 'Offline');
+  const status   = isOnline ? title + ' ✓' : title;
+
+  // Avatar: DOM first, then API. Real API gives a relative path like
+  // "avatars/user/04989d4d-....png" which needs the base URL prepended.
   const domAvatar = getAnchorAvatarFromDOM(anchor);
+  const rawAvatar = !domAvatar
+    ? (u.avatar || u.avatarUrl || u.avatar_url || u.profilePicture || u.picture || '')
+    : '';
   const avatar = domAvatar
-    || u?.avatar || u?.avatarUrl || u?.avatar_url
-    || u?.profileImage || u?.profilePicture || u?.profilePhoto
-    || u?.picture || u?.photo || u?.image || u?.imageUrl || u?.photoUrl
-    || u?.thumbnailUrl || u?.thumbnail
-    || u?.steamAvatar || u?.steam_avatar || u?.steamAvatarUrl || u?.steam_avatar_url
-    || u?.avatarmedium || u?.avatarMedium || u?.avatarfull || u?.avatarFull
-    || data?.avatar || data?.avatar_url || data?.avatarUrl
-    || data?.profileImage || data?.profilePicture || data?.picture
-    || data?.steamAvatar || data?.steam_avatar || data?.avatarmedium || data?.avatarfull
+    || (rawAvatar && !rawAvatar.startsWith('http') ? 'https://unmatched.gg/' + rawAvatar : rawAvatar)
     || '';
 
-  // Stats may come from a games array (Next.js scraped structure) or direct stats
-  let kd = null, elo = null, matches = null, winPct = null, game = 'CS:GO', mode = '2v2';
-
-  const gamesArr = u?.games || u?.game_stats || data?.games || [];
-  if (gamesArr.length > 0) {
-    // Prefer the game with the most matches played
-    const activeGame = gamesArr.slice().sort((a, b) =>
-      ((b.matches || b.matches_played || 0) - (a.matches || a.matches_played || 0))
-    )[0];
-    if (activeGame) {
-      kd      = activeGame.kd || activeGame.kdRatio || activeGame.kd_ratio || activeGame.kill_death_ratio || null;
-      elo     = activeGame.elo || activeGame.mmr || activeGame.rating || null;
-      matches = activeGame.matches || activeGame.matches_played || activeGame.total_matches || null;
-      winPct  = activeGame.winRate || activeGame.win_rate || activeGame.wr || activeGame.win_percentage || null;
-      game    = activeGame.game || activeGame.name || activeGame.slug || 'CS:GO';
-      mode    = activeGame.mode || activeGame.queue || activeGame.type || '2v2';
-    }
-  } else {
-    // Direct stats fallback — unmatched.gg exposes elo/kd/matches/winRate directly on the user object.
-    const s = u?.stats || data?.stats || {};
-    kd      = s.kd      || s.kd_ratio  || s.kdRatio  || u?.kd      || u?.kd_ratio  || data?.kd      || null;
-    elo     = s.elo     || s.mmr       || u?.elo     || u?.mmr     || data?.elo    || data?.mmr     || null;
-    matches = s.matches || s.total_matches || u?.matches || u?.total_matches || data?.matches || data?.total_matches || null;
-    winPct  = s.winRate || s.win_rate  || s.wr       || s.win_percentage ||
-              u?.winRate || u?.win_rate || u?.wr      || u?.winPct   ||
-              data?.winRate || data?.win_rate || data?.wr || data?.winPct || null;
-    game    = s.game    || s.current_game || 'CS:GO';
-    mode    = s.mode    || s.queue    || '2v2';
+  // ── Stats ──────────────────────────────────────────────────────────────────
+  // Real API: data.stats is an array of per-gamemode objects, each with:
+  //   matchCount  — games played in that mode
+  //   winRate     — integer 0-100 (percentage wins)
+  //   gamemodeName — "2v2", "5v5", etc.
+  //   eloProgression.currentElo — the ELO for that mode
+  // Pick the mode with the most matches played (and at least one match).
+  let elo = null, matches = null, winPct = null, mode = '';
+  const statsArr = Array.isArray(data.stats) ? data.stats : [];
+  const played = statsArr.filter(s => s.matchCount > 0);
+  if (played.length > 0) {
+    played.sort((a, b) => b.matchCount - a.matchCount);
+    const best = played[0];
+    matches = best.matchCount;
+    winPct  = best.winRate;           // already an integer 0-100
+    elo     = best.eloProgression?.currentElo ?? null;
+    mode    = best.gamemodeName || '';
   }
 
+  // ── Card HTML ──────────────────────────────────────────────────────────────
   const card = document.createElement('div');
   card.className = 'unm-user-card';
 
@@ -679,37 +666,29 @@ function buildUserCard(data, anchor) {
     ? ' <span class="unm-card-tag">#' + escapeHtml(String(userId)) + '</span>'
     : '';
 
-  // K/D and ELO shown in the header right column.
-  // unmatched.gg calls its rating "elo" even though it functions as MMR.
-  const kdNum = kd !== null ? parseFloat(kd) : null;
-  const eloNum = elo !== null ? parseFloat(elo) : null;
-  const headerStatsHtml = (
-    (settings.showKD && kdNum !== null && !isNaN(kdNum)
-      ? '<div class="unm-card-hstat"><span class="unm-stat-label">K/D:</span>&nbsp;<span class="unm-stat-val">~' + kdNum.toFixed(2) + '</span></div>'
-      : '') +
+  // ELO in header (unmatched.gg calls it "elo", it acts as MMR)
+  const eloNum = elo !== null ? parseInt(elo, 10) : null;
+  const headerStatsHtml =
     (settings.showMMR && eloNum !== null && !isNaN(eloNum)
-      ? '<div class="unm-card-hstat"><span class="unm-stat-label">ELO:</span>&nbsp;<span class="unm-stat-val">~' + Math.round(eloNum) + '</span></div>'
-      : '')
-  );
+      ? '<div class="unm-card-hstat"><span class="unm-stat-label">ELO:</span>&nbsp;<span class="unm-stat-val">' + eloNum + '</span></div>'
+      : '');
 
-  // Win % display: API may return decimal (0.55) or integer (55)
-  const winPctNum = winPct !== null ? parseFloat(winPct) : null;
-  const winPctDisplay = (winPctNum !== null && !isNaN(winPctNum))
-    ? Math.round(winPctNum < 1 ? winPctNum * 100 : winPctNum) + '%'
+  // Win % — already an integer from the API
+  const winPctDisplay = (settings.showWinPct && winPct !== null && matches !== null)
+    ? winPct + '%'
     : null;
 
-  const winPctHtml = (settings.showWinPct && winPctDisplay !== null)
-    ? '<div class="unm-card-game-stat"><span class="unm-stat-label">Win %</span><strong>' + escapeHtml(winPctDisplay) + '</strong></div>'
+  const winPctHtml = winPctDisplay !== null
+    ? '<div class="unm-card-game-stat"><span class="unm-stat-label">W/R</span><strong>' + escapeHtml(winPctDisplay) + '</strong></div>'
     : '';
 
   const gameHtml = matches !== null ? (
     '<div class="unm-card-game-section">' +
-    '<div class="unm-card-game-label">' + escapeHtml(String(game)) + '</div>' +
-    '<div class="unm-card-game-row"><span class="unm-card-mode">' + escapeHtml(String(mode)) + '</span>' +
+    (mode ? '<div class="unm-card-game-label">CS2 &middot; ' + escapeHtml(mode) + '</div>' : '') +
     '<div class="unm-card-game-stats">' +
     '<div class="unm-card-game-stat"><span class="unm-stat-label">Matches</span><strong>' + escapeHtml(String(matches)) + '</strong></div>' +
     winPctHtml +
-    '</div></div></div>'
+    '</div></div>'
   ) : '';
 
   card.innerHTML =
