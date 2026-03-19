@@ -490,7 +490,7 @@ async function fetchPlayerStats(username) {
 
 async function fetchPlayerStatsFromPage(username) {
   try {
-    const res = await fetch('/users/' + encodeURIComponent(username), { credentials: 'include' });
+    const res = await fetch('/user/' + encodeURIComponent(username), { credentials: 'include' });
     if (!res.ok) return null;
     const html = await res.text();
 
