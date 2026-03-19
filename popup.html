@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>unm.addon</title>
+  <link rel="stylesheet" href="popup.css" />
+</head>
+<body>
+  <div id="app">
+
+    <!-- ── ROOT PAGE (default) ── -->
+    <div id="page-root" class="page active">
+      <div class="page-toolbar">
+        <span class="page-title page-title-brand">unm.addon</span>
+      </div>
+      <div class="feature-list">
+        <div class="feature-row">
+          <button class="feat-btn danger nav-btn" data-target="page-account">Account Manager</button>
+        </div>
+        <div class="feature-row">
+          <button class="feat-btn danger nav-btn" data-target="page-settings">Settings</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── SETTINGS PAGE (all feature toggles) ── -->
+    <div id="page-settings" class="page">
+      <div class="page-toolbar">
+        <button class="back-btn" data-target="page-root" title="Back">&#8592;</button>
+        <span class="page-title">Settings</span>
+      </div>
+      <div class="feature-list">
+        <div class="feature-row has-gear">
+          <button class="feat-btn success toggle-btn" data-key="autoAccept">Auto Accept</button>
+          <button class="gear-btn" data-settings="autoAccept" title="Settings">&#9881;</button>
+        </div>
+        <div class="feature-row has-gear">
+          <button class="feat-btn success toggle-btn" data-key="profileModifiers">Profile Modifiers</button>
+          <button class="gear-btn" data-settings="profileModifiers" title="Settings">&#9881;</button>
+        </div>
+        <div class="feature-row has-gear">
+          <button class="feat-btn success toggle-btn" data-key="websiteModifiers">Website Modifiers</button>
+          <button class="gear-btn" data-settings="websiteModifiers" title="Settings">&#9881;</button>
+        </div>
+        <div class="feature-row has-gear">
+          <button class="feat-btn success toggle-btn" data-key="customRoleColors">Custom Role Colors</button>
+          <button class="gear-btn" data-settings="customRoleColors" title="Settings">&#9881;</button>
+        </div>
+        <div class="feature-row">
+          <button class="feat-btn success toggle-btn" data-key="stealthStalking">Stealth Stalking</button>
+        </div>
+        <div class="feature-row">
+          <button class="feat-btn success toggle-btn" data-key="trueStatus">True Status</button>
+        </div>
+        <div class="feature-row">
+          <button class="feat-btn success toggle-btn" data-key="acceptRevealer">Accept Revealer</button>
+        </div>
+        <div class="feature-row">
+          <button class="feat-btn success toggle-btn" data-key="teamChatRevealer">Team Chat Revealer</button>
+        </div>
+        <div class="feature-row">
+          <button class="feat-btn success toggle-btn" data-key="teammateRevealer">Teammate Revealer</button>
+        </div>
+        <div class="feature-row has-gear">
+          <button class="feat-btn success toggle-btn" data-key="simpleDiscord">Simple Discord</button>
+          <button class="gear-btn" data-settings="simpleDiscord" title="Settings">&#9881;</button>
+        </div>
+        <div class="feature-row has-gear">
+          <button class="feat-btn danger toggle-btn" data-key="autoVeto">Auto Veto</button>
+          <button class="gear-btn danger" data-settings="autoVeto" title="Settings">&#9881;</button>
+        </div>
+        <div class="feature-row has-gear">
+          <button class="feat-btn success toggle-btn" data-key="userCards">User Cards</button>
+          <button class="gear-btn" data-settings="userCards" title="Settings">&#9881;</button>
+        </div>
+        <div class="feature-row">
+          <button class="feat-btn success toggle-btn" data-key="autoAdventRedeemer">Auto Advent Redeemer</button>
+        </div>
+        <div class="feature-row">
+          <button class="feat-btn success toggle-btn" data-key="adBlocker">Ad Blocker</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── ACCOUNT MANAGER PAGE ── -->
+    <div id="page-account" class="page">
+      <div class="page-toolbar">
+        <button class="back-btn" data-target="page-root" title="Back">&#8592;</button>
+        <span class="page-title">Account Manager</span>
+      </div>
+      <div class="feature-list">
+        <div class="feature-row">
+          <button class="feat-btn danger action-btn" data-action="switchAccount">Switch Account</button>
+        </div>
+        <div class="feature-row">
+          <button class="feat-btn danger action-btn" data-action="switchSteamAccount">Switch Steam Account</button>
+        </div>
+        <div class="feature-row">
+          <button class="feat-btn danger action-btn" data-action="importAccount">Import Account</button>
+        </div>
+        <div class="feature-row">
+          <button class="feat-btn danger action-btn" data-action="exportAccount">Export Account</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── AUTO ACCEPT SETTINGS ── -->
+    <div id="page-autoAccept" class="page">
+      <div class="page-toolbar">
+        <button class="back-btn" data-target="page-settings" title="Back">&#8592;</button>
+        <span class="page-title">Auto Accept</span>
+      </div>
+      <div class="feature-list settings-list">
+        <div class="setting-row">
+          <label>Accept Delay (ms)</label>
+          <input type="number" id="autoAcceptDelay" min="0" max="5000" step="100" value="500" />
+        </div>
+        <div class="setting-row">
+          <button class="feat-btn danger" id="resetSettings">Reset All Settings</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── PROFILE MODIFIERS PAGE ── -->
+    <div id="page-profileModifiers" class="page">
+      <div class="page-toolbar">
+        <button class="back-btn" data-target="page-settings" title="Back">&#8592;</button>
+        <span class="page-title">Profile Modifiers</span>
+      </div>
+      <div class="feature-list settings-list">
+        <div class="setting-row">
+          <label>Verified Name</label>
+          <input type="text" id="verifiedName" placeholder="" />
+        </div>
+        <div class="setting-row">
+          <label>Role</label>
+          <select id="profileRole">
+            <option value="NONE">NONE</option>
+            <option value="Admin">Admin</option>
+            <option value="Moderator">Moderator</option>
+            <option value="VIP">VIP</option>
+            <option value="Premium">Premium</option>
+            <option value="Contributor">Contributor</option>
+          </select>
+        </div>
+        <div class="setting-row">
+          <label>Border</label>
+          <select id="profileBorder">
+            <option value="NONE">NONE</option>
+            <option value="Gold">Gold</option>
+            <option value="Diamond">Diamond</option>
+            <option value="Platinum">Platinum</option>
+            <option value="Silver">Silver</option>
+          </select>
+        </div>
+        <div class="setting-row">
+          <button class="feat-btn danger" id="saveProfileModifiers">Save</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── WEBSITE MODIFIERS PAGE ── -->
+    <div id="page-websiteModifiers" class="page">
+      <div class="page-toolbar">
+        <button class="back-btn" data-target="page-settings" title="Back">&#8592;</button>
+        <span class="page-title">Website Modifiers</span>
+      </div>
+      <div class="feature-list settings-list">
+        <div class="setting-row">
+          <label>Accent Color</label>
+          <input type="color" id="accentColor" value="#00c853" />
+        </div>
+        <div class="setting-row">
+          <label>Compact Mode</label>
+          <input type="checkbox" id="compactMode" />
+        </div>
+        <div class="setting-row">
+          <label>Hide Footer</label>
+          <input type="checkbox" id="hideFooter" />
+        </div>
+      </div>
+    </div>
+
+    <!-- ── CUSTOM ROLE COLORS PAGE ── -->
+    <div id="page-customRoleColors" class="page">
+      <div class="page-toolbar">
+        <button class="back-btn" data-target="page-settings" title="Back">&#8592;</button>
+        <span class="page-title">Custom Role Colors</span>
+      </div>
+      <div class="feature-list settings-list">
+        <div class="setting-row">
+          <label>Admin Color</label>
+          <input type="color" id="adminColor" value="#ff4444" />
+        </div>
+        <div class="setting-row">
+          <label>Moderator Color</label>
+          <input type="color" id="modColor" value="#ffaa00" />
+        </div>
+        <div class="setting-row">
+          <label>VIP Color</label>
+          <input type="color" id="vipColor" value="#aa44ff" />
+        </div>
+      </div>
+    </div>
+
+    <!-- ── SIMPLE DISCORD PAGE ── -->
+    <div id="page-simpleDiscord" class="page">
+      <div class="page-toolbar">
+        <button class="back-btn" data-target="page-settings" title="Back">&#8592;</button>
+        <span class="page-title">Simple Discord</span>
+      </div>
+      <div class="feature-list settings-list">
+        <div class="setting-row">
+          <label>Use Desktop Redirect</label>
+          <input type="checkbox" id="discordDesktopRedirect" checked />
+        </div>
+        <div class="setting-row">
+          <button class="feat-btn danger" id="saveSimpleDiscord">Save</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── AUTO VETO PAGE ── -->
+    <div id="page-autoVeto" class="page">
+      <div class="page-toolbar">
+        <button class="back-btn" data-target="page-settings" title="Back">&#8592;</button>
+        <span class="page-title">Auto Veto</span>
+      </div>
+      <div class="feature-list settings-list">
+        <div class="setting-row">
+          <label>Maps to Veto (comma-separated)</label>
+          <input type="text" id="vetoMaps" placeholder="e.g. Dust2,Mirage" />
+        </div>
+      </div>
+    </div>
+
+    <!-- ── USER CARDS PAGE ── -->
+    <div id="page-userCards" class="page">
+      <div class="page-toolbar">
+        <button class="back-btn" data-target="page-settings" title="Back">&#8592;</button>
+        <span class="page-title">User Cards</span>
+      </div>
+      <div class="feature-list settings-list">
+        <div class="setting-row">
+          <label>Show K/D</label>
+          <input type="checkbox" id="showKD" checked />
+        </div>
+        <div class="setting-row">
+          <label>Show MMR</label>
+          <input type="checkbox" id="showMMR" checked />
+        </div>
+        <div class="setting-row">
+          <label>Show Win %</label>
+          <input type="checkbox" id="showWinPct" checked />
+        </div>
+        <div class="setting-row">
+          <label>Hover Delay (ms)</label>
+          <input type="number" id="userCardDelay" min="100" max="3000" step="100" value="400" />
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /#app -->
+
+  <script src="popup.js"></script>
+</body>
+</html>

@@ -1,0 +1,246 @@
+/* ── unm.addon content styles ── */
+
+/* ── Notification Banner ── */
+.unm-banner {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 2147483647;
+  background: #1565c0;
+  color: #fff;
+  font-family: 'Segoe UI', Arial, sans-serif;
+  font-size: 13px;
+  padding: 8px 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.35);
+}
+.unm-banner svg { flex-shrink: 0; }
+.unm-banner-text { flex: 1; }
+.unm-banner-close {
+  background: transparent; border: none; color: rgba(255,255,255,0.7);
+  cursor: pointer; font-size: 14px; padding: 0 4px; line-height: 1;
+}
+.unm-banner-close:hover { color: #fff; }
+
+/* ── Floating Action Button ── */
+/* Positioned to the LEFT of the unmatched.gg chat bubble icon (right ~16px) */
+.unm-fab {
+  position: fixed;
+  bottom: 16px;
+  right: 76px;        /* clears the ~56px-wide chat icon */
+  z-index: 2147483646;
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  background: #c62828;
+  border: 2px solid rgba(255,255,255,0.18);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 18px rgba(0,0,0,0.55);
+  transition: transform 0.18s, filter 0.18s;
+  color: #fff;
+  padding: 0;
+}
+.unm-fab:hover { filter: brightness(1.18); transform: scale(1.06); }
+.unm-fab.unm-fab-open { transform: rotate(15deg) scale(1.06); filter: brightness(1.15); }
+.unm-fab svg { display: block; pointer-events: none; }
+
+/* ── Overlay panel — anchored above the FAB ── */
+.unm-overlay {
+  display: none;
+  position: fixed;
+  bottom: 70px;       /* 16px bottom + 46px FAB + 8px gap */
+  right: 72px;        /* aligned with FAB right edge */
+  z-index: 2147483645;
+}
+.unm-overlay.visible { display: block; }
+
+/* ── Overlay Menu ── */
+.unm-menu {
+  background: #0d0d1a;
+  border-radius: 10px;
+  width: 290px;
+  max-height: calc(100vh - 100px);
+  overflow-y: auto;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.7);
+  font-family: 'Segoe UI', Arial, sans-serif;
+  color: #fff;
+}
+
+/* ── Pages ── */
+.unm-page { display: none; flex-direction: column; }
+.unm-page.active { display: flex; }
+
+/* ── Toolbar ── */
+.unm-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 10px 8px;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+.unm-title {
+  flex: 1;
+  font-weight: 600;
+  font-size: 14px;
+  letter-spacing: 0.3px;
+  color: #e0e0e0;
+}
+.unm-title-brand {
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  color: #fff;
+}
+.unm-back {
+  background: rgba(255,255,255,0.10);
+  border: none; color: #fff; cursor: pointer;
+  font-size: 16px; border-radius: 4px;
+  width: 28px; height: 28px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; transition: background 0.15s;
+}
+.unm-back:hover { background: rgba(255,255,255,0.22); }
+.unm-close-btn {
+  background: transparent; border: none;
+  color: rgba(255,255,255,0.5); cursor: pointer;
+  font-size: 14px; padding: 0 2px; line-height: 1;
+  flex-shrink: 0; transition: color 0.15s;
+}
+.unm-close-btn:hover { color: #fff; }
+
+/* ── Version footer ── */
+.unm-version {
+  text-align: center;
+  font-size: 10px;
+  color: rgba(255,255,255,0.25);
+  padding: 6px 0 8px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+/* ── Feature List ── */
+.unm-list {
+  padding: 6px 8px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.unm-row { display: flex; gap: 3px; }
+.unm-row.unm-has-gear .unm-btn { flex: 1; }
+
+/* ── Buttons ── */
+.unm-btn {
+  width: 100%;
+  padding: 8px 10px;
+  border: none; border-radius: 6px;
+  cursor: pointer; font-size: 13px; font-weight: 600;
+  letter-spacing: 0.2px; text-align: center;
+  transition: filter 0.15s; color: #fff;
+}
+.unm-success { background: #00c853; }
+.unm-success:hover { filter: brightness(1.12); }
+.unm-danger  { background: #e53935; }
+.unm-danger:hover  { filter: brightness(1.12); }
+.unm-off { background: #1e1e30; color: #666; }
+.unm-off:hover { background: #2a2a3e; color: #999; }
+
+/* ── Gear ── */
+.unm-gear {
+  background: #1e4d30;
+  border: none; border-radius: 6px; color: #aaa;
+  cursor: pointer; font-size: 15px;
+  width: 34px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  transition: background 0.15s, color 0.15s;
+}
+.unm-gear:hover { background: #276640; color: #fff; }
+.unm-gear.unm-gear-danger { background: #4a1515; }
+.unm-gear.unm-gear-danger:hover { background: #7b1c1c; color: #fff; }
+
+/* ── Settings rows ── */
+.unm-settings { gap: 8px; }
+.unm-settings label {
+  font-size: 12px; color: #a0a0b8; font-weight: 500;
+  display: flex; align-items: center; gap: 6px;
+}
+.unm-input {
+  background: #13132a; border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 5px; color: #fff; font-size: 12px;
+  padding: 6px 8px; width: 100%; outline: none; box-sizing: border-box;
+}
+.unm-input:focus { border-color: #00c853; }
+select.unm-input { cursor: pointer; }
+.unm-color {
+  width: 50px; height: 28px; border: none; border-radius: 4px;
+  cursor: pointer; background: transparent;
+}
+
+/* ── User Card ── */
+.unm-user-card {
+  position: absolute;
+  z-index: 2147483644;
+  background: #1a1a2e;
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 10px; padding: 14px;
+  min-width: 260px; max-width: 320px;
+  box-shadow: 0 6px 24px rgba(0,0,0,0.55);
+  font-family: 'Segoe UI', Arial, sans-serif;
+  color: #fff; font-size: 13px; pointer-events: auto;
+}
+.unm-card-loading { font-size: 12px; color: #888; padding: 10px 14px; }
+.unm-card-header { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 10px; }
+.unm-card-avatar {
+  width: 48px; height: 48px; border-radius: 8px;
+  object-fit: cover; border: 2px solid rgba(255,255,255,0.15); flex-shrink: 0;
+}
+.unm-card-avatar-placeholder {
+  width: 48px; height: 48px; border-radius: 8px;
+  background: #2a2a3a; display: flex; align-items: center;
+  justify-content: center; font-size: 20px; color: #555; flex-shrink: 0;
+}
+.unm-card-info { flex: 1; min-width: 0; }
+.unm-card-name { font-weight: 700; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.unm-card-tag { color: #888; font-weight: 400; font-size: 12px; }
+.unm-card-status { font-size: 12px; color: #a0a0b8; margin-top: 2px; }
+/* K/D and MMR in the right column of the header */
+.unm-card-header-stats { margin-left: auto; display: flex; flex-direction: column; gap: 4px; flex-shrink: 0; text-align: right; }
+.unm-card-hstat { display: flex; align-items: center; gap: 4px; justify-content: flex-end; font-size: 12px; }
+.unm-stat-label { font-size: 11px; color: #888; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+.unm-stat-val { font-size: 13px; font-weight: 700; color: #fff; }
+.unm-card-game-section { background: rgba(255,255,255,0.05); border-radius: 6px; padding: 8px 10px; }
+.unm-card-game-label { font-size: 11px; color: #00c853; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
+.unm-card-game-row { display: flex; align-items: center; gap: 10px; }
+.unm-card-mode { background: rgba(0,200,83,0.18); color: #00c853; border-radius: 4px; padding: 3px 8px; font-size: 12px; font-weight: 700; }
+.unm-card-game-stats { display: flex; gap: 16px; }
+.unm-card-game-stat { display: flex; flex-direction: column; gap: 1px; font-size: 12px; }
+.unm-card-game-stat strong { color: #fff; font-weight: 700; }
+
+/* ── Profile Modifier badges ── */
+.unm-verified-badge { color: #00c853; font-size: 12px; font-weight: 700; }
+
+/* ── Teammate Revealer Labels ── */
+.unm-party-label {
+  display: inline-block; font-size: 10px; font-weight: 700;
+  letter-spacing: 0.5px; text-transform: uppercase;
+  border-radius: 3px; padding: 2px 6px;
+  margin-left: 6px; vertical-align: middle; pointer-events: none;
+}
+.unm-party-teammate { background: rgba(0,200,83,0.22); color: #00c853; border: 1px solid rgba(0,200,83,0.4); }
+.unm-party-random   { background: rgba(255,255,255,0.08); color: #aaa; border: 1px solid rgba(255,255,255,0.15); }
+
+/* ── Compact Mode — JS-applied class hides nav text labels ── */
+.unm-compact-text { display: none !important; }
+
+/* ── Power Watermark (off by default) ── */
+.unm-watermark {
+  position: fixed; bottom: 70px; right: 76px;
+  z-index: 2147483643;
+  background: rgba(0,200,83,0.15); border: 1px solid #00c853; color: #00c853;
+  font-family: 'Segoe UI', Arial, sans-serif; font-size: 11px; font-weight: 700;
+  letter-spacing: 1px; padding: 4px 10px; border-radius: 4px;
+  pointer-events: none; text-transform: uppercase;
+}
