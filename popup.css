@@ -1,0 +1,210 @@
+/* ── Reset & Base ── */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  width: 280px;
+  background: #0d0d1a;
+  color: #fff;
+  font-family: 'Segoe UI', Arial, sans-serif;
+  font-size: 13px;
+  min-height: 80px;
+}
+
+#app {
+  position: relative;
+}
+
+/* ── Pages ── */
+.page {
+  display: none;
+  flex-direction: column;
+}
+
+.page.active {
+  display: flex;
+}
+
+/* ── Toolbar ── */
+.page-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 8px 6px;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+
+.back-btn {
+  background: rgba(255,255,255,0.12);
+  border: none;
+  color: #fff;
+  cursor: pointer;
+  font-size: 16px;
+  border-radius: 4px;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: background 0.15s;
+}
+
+.back-btn:hover {
+  background: rgba(255,255,255,0.22);
+}
+
+.page-title {
+  font-weight: 600;
+  font-size: 14px;
+  letter-spacing: 0.3px;
+  color: #e0e0e0;
+  flex: 1;
+}
+
+.page-title-brand {
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  color: #fff;
+}
+
+/* ── Feature List ── */
+.feature-list {
+  padding: 6px 6px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.feature-row {
+  display: flex;
+  gap: 3px;
+}
+
+.feature-row.has-gear .feat-btn {
+  flex: 1;
+}
+
+/* ── Feature Buttons ── */
+.feat-btn {
+  width: 100%;
+  padding: 7px 10px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.2px;
+  text-align: center;
+  transition: filter 0.15s, opacity 0.15s;
+  color: #fff;
+}
+
+.feat-btn.success {
+  background: #00c853;
+}
+
+.feat-btn.success:hover {
+  filter: brightness(1.12);
+}
+
+.feat-btn.danger {
+  background: #e53935;
+}
+
+.feat-btn.danger:hover {
+  filter: brightness(1.12);
+}
+
+/* Disabled (off) state for toggle buttons */
+.feat-btn.toggle-btn.off {
+  background: #2a2a3a;
+  color: #888;
+}
+
+.feat-btn.toggle-btn.off:hover {
+  background: #333348;
+  color: #aaa;
+}
+
+/* ── Gear Button ── */
+.gear-btn {
+  background: #1e6e3a;
+  border: none;
+  border-radius: 5px;
+  color: #fff;
+  cursor: pointer;
+  font-size: 16px;
+  width: 34px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: filter 0.15s;
+}
+
+.gear-btn:hover {
+  filter: brightness(1.2);
+}
+
+.gear-btn.danger {
+  background: #7b1c1c;
+}
+
+/* ── Settings Page ── */
+.settings-list {
+  gap: 8px;
+}
+
+.setting-row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.setting-row label {
+  font-size: 12px;
+  color: #a0a0b8;
+  font-weight: 500;
+}
+
+.setting-row input[type="text"],
+.setting-row input[type="number"],
+.setting-row input[type="url"],
+.setting-row select {
+  background: #1a1a2e;
+  border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 4px;
+  color: #fff;
+  font-size: 12px;
+  padding: 5px 8px;
+  width: 100%;
+  outline: none;
+}
+
+.setting-row input[type="text"]:focus,
+.setting-row input[type="number"]:focus,
+.setting-row input[type="url"]:focus,
+.setting-row select:focus {
+  border-color: #00c853;
+}
+
+.setting-row input[type="color"] {
+  width: 50px;
+  height: 28px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  background: transparent;
+}
+
+.setting-row input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  accent-color: #00c853;
+  cursor: pointer;
+}
