@@ -465,27 +465,54 @@ function getAnchorDisplayName(anchor) {
   return '';
 }
 
+// Returns true if a data object contains at least one recognisable player stat.
+function _hasStats(d) {
+  if (!d || typeof d !== 'object') return false;
+  return d.elo !== undefined || d.kd !== undefined || d.kd_ratio !== undefined ||
+         d.matches !== undefined || d.total_matches !== undefined ||
+         d.winRate !== undefined || d.win_rate !== undefined || d.wr !== undefined ||
+         d.stats || d.game_stats || (Array.isArray(d.games) && d.games.length > 0);
+}
+
 async function fetchPlayerStats(username) {
-  // Try REST API endpoints first
+  // Try REST API endpoints first — only accept responses that actually contain stats.
+  // If the endpoint responds with only basic user info (no stats), fall through so
+  // fetchPlayerStatsFromPage (which pulls from __NEXT_DATA__) can be attempted.
   const apiEndpoints = [
     '/api/v1/users/' + encodeURIComponent(username),
     '/api/users/' + encodeURIComponent(username),
+    '/api/v2/users/' + encodeURIComponent(username),
     '/api/v1/profile/' + encodeURIComponent(username),
     '/api/profile/' + encodeURIComponent(username),
+    '/api/player/' + encodeURIComponent(username),
+    '/api/players/' + encodeURIComponent(username),
   ];
+
+  let basicData = null; // data with username/id but no stats
 
   for (const ep of apiEndpoints) {
     try {
       const res = await fetch(ep, { credentials: 'include' });
-      if (res.ok) {
-        const data = await res.json();
-        if (data && (data.username || data.id || data.user || data.name)) return data;
+      if (!res.ok) continue;
+      const data = await res.json();
+      if (!data) continue;
+
+      const root = data.user || data;
+      if (_hasStats(root) || _hasStats(data.stats)) {
+        // Full stats available — use it immediately.
+        return data;
       }
+      // Has user identity but no stats — keep as fallback.
+      if (!basicData && (root.username || root.id || root.name)) basicData = data;
     } catch (_) { /* try next */ }
   }
 
-  // Fallback: fetch the profile page and extract __NEXT_DATA__
-  return fetchPlayerStatsFromPage(username);
+  // Try page scraping (most reliable for Next.js SSR apps).
+  const pageData = await fetchPlayerStatsFromPage(username);
+  if (pageData) return pageData;
+
+  // Last resort: basic identity data (no stats) is better than nothing.
+  return basicData || null;
 }
 
 async function fetchPlayerStatsFromPage(username) {
@@ -502,28 +529,46 @@ async function fetchPlayerStatsFromPage(username) {
     const pp = nextData?.props?.pageProps;
     if (!pp) return null;
 
-    // Try multiple paths for user data in Next.js pageProps,
-    // covering direct props, nested data objects, and React Query / TanStack Query
-    // dehydrated state (common in Next.js + React Query apps).
-    const candidates = [
+    // Build candidate list: named pageProps paths first, then loop over ALL
+    // React Query / TanStack Query dehydrated state queries (not just index 0).
+    const direct = [
       pp.user,
       pp.userData,
+      pp.player,
+      pp.playerData,
       pp.profile,
+      pp.profileData,
       pp.data?.user,
+      pp.data?.player,
       pp.data?.profile,
       pp.data,
       pp.initialData?.user,
+      pp.initialData?.player,
       pp.initialData,
       pp.initialProps?.user,
-      // React Query / TanStack Query dehydrated state
-      pp.dehydratedState?.queries?.[0]?.state?.data?.user,
-      pp.dehydratedState?.queries?.[0]?.state?.data?.profile,
-      pp.dehydratedState?.queries?.[0]?.state?.data,
+      pp.serverData?.user,
+      pp.serverData,
     ];
-    for (const c of candidates) {
-      if (c && typeof c === 'object' && !Array.isArray(c)) return c;
+
+    // Also collect all React Query dehydrated query payloads.
+    const rqQueries = pp.dehydratedState?.queries || [];
+    const rqCandidates = [];
+    for (const q of rqQueries) {
+      const d = q?.state?.data;
+      if (!d) continue;
+      rqCandidates.push(d?.user, d?.player, d?.profile, d);
     }
-    return null;
+
+    const allCandidates = [...direct, ...rqCandidates];
+
+    // Prefer the first candidate that carries actual player stats.
+    let fallback = null;
+    for (const c of allCandidates) {
+      if (!c || typeof c !== 'object' || Array.isArray(c)) continue;
+      if (_hasStats(c) || _hasStats(c.stats)) return c;
+      if (!fallback && (c.username || c.id || c.name)) fallback = c;
+    }
+    return fallback;
   } catch (_) { return null; }
 }
 
@@ -594,7 +639,7 @@ function buildUserCard(data, anchor) {
     || '';
 
   // Stats may come from a games array (Next.js scraped structure) or direct stats
-  let kd = null, mmr = null, matches = null, winPct = null, game = 'CS:GO', mode = '2v2';
+  let kd = null, elo = null, matches = null, winPct = null, game = 'CS:GO', mode = '2v2';
 
   const gamesArr = u?.games || u?.game_stats || data?.games || [];
   if (gamesArr.length > 0) {
@@ -603,20 +648,22 @@ function buildUserCard(data, anchor) {
       ((b.matches || b.matches_played || 0) - (a.matches || a.matches_played || 0))
     )[0];
     if (activeGame) {
-      kd      = activeGame.kd || activeGame.kdRatio || activeGame.kill_death_ratio || null;
-      mmr     = activeGame.mmr || activeGame.elo || activeGame.rating || null;
+      kd      = activeGame.kd || activeGame.kdRatio || activeGame.kd_ratio || activeGame.kill_death_ratio || null;
+      elo     = activeGame.elo || activeGame.mmr || activeGame.rating || null;
       matches = activeGame.matches || activeGame.matches_played || activeGame.total_matches || null;
-      winPct  = activeGame.winRate || activeGame.win_rate || activeGame.win_percentage || null;
+      winPct  = activeGame.winRate || activeGame.win_rate || activeGame.wr || activeGame.win_percentage || null;
       game    = activeGame.game || activeGame.name || activeGame.slug || 'CS:GO';
       mode    = activeGame.mode || activeGame.queue || activeGame.type || '2v2';
     }
   } else {
-    // Direct stats fallback
+    // Direct stats fallback — unmatched.gg exposes elo/kd/matches/winRate directly on the user object.
     const s = u?.stats || data?.stats || {};
-    kd      = s.kd      || u?.kd      || data?.kd      || null;
-    mmr     = s.mmr     || s.elo      || u?.mmr     || data?.mmr     || null;
-    matches = s.matches || s.total_matches || u?.matches || data?.matches || null;
-    winPct  = s.winRate || s.win_rate || s.win_percentage || u?.winPct || data?.winPct || null;
+    kd      = s.kd      || s.kd_ratio  || s.kdRatio  || u?.kd      || u?.kd_ratio  || data?.kd      || null;
+    elo     = s.elo     || s.mmr       || u?.elo     || u?.mmr     || data?.elo    || data?.mmr     || null;
+    matches = s.matches || s.total_matches || u?.matches || u?.total_matches || data?.matches || data?.total_matches || null;
+    winPct  = s.winRate || s.win_rate  || s.wr       || s.win_percentage ||
+              u?.winRate || u?.win_rate || u?.wr      || u?.winPct   ||
+              data?.winRate || data?.win_rate || data?.wr || data?.winPct || null;
     game    = s.game    || s.current_game || 'CS:GO';
     mode    = s.mode    || s.queue    || '2v2';
   }
@@ -632,14 +679,16 @@ function buildUserCard(data, anchor) {
     ? ' <span class="unm-card-tag">#' + escapeHtml(String(userId)) + '</span>'
     : '';
 
-  // K/D and MMR shown in the header right column (matching unm.pwr layout)
+  // K/D and ELO shown in the header right column.
+  // unmatched.gg calls its rating "elo" even though it functions as MMR.
   const kdNum = kd !== null ? parseFloat(kd) : null;
+  const eloNum = elo !== null ? parseFloat(elo) : null;
   const headerStatsHtml = (
     (settings.showKD && kdNum !== null && !isNaN(kdNum)
       ? '<div class="unm-card-hstat"><span class="unm-stat-label">K/D:</span>&nbsp;<span class="unm-stat-val">~' + kdNum.toFixed(2) + '</span></div>'
       : '') +
-    (settings.showMMR && mmr !== null
-      ? '<div class="unm-card-hstat"><span class="unm-stat-label">MMR:</span>&nbsp;<span class="unm-stat-val">~' + escapeHtml(String(mmr)) + '</span></div>'
+    (settings.showMMR && eloNum !== null && !isNaN(eloNum)
+      ? '<div class="unm-card-hstat"><span class="unm-stat-label">ELO:</span>&nbsp;<span class="unm-stat-val">~' + Math.round(eloNum) + '</span></div>'
       : '')
   );
 
